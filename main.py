@@ -339,7 +339,7 @@ async def this_or_that(ctx):
         "تنام في غابة مسكونة 👻 ولا تسبح مع قروش؟ 🦈",
         "تصير غني بس وحيد 💰 ولا فقير ومعك أعز أخوياك؟ 🤝",
         "تلعب Resident Evil في الحقيقة 🧟 ولا تدخل عالم Jujutsu Kaisen؟ 🔥"
-    import random
+  
     choice = random.choice(choices)
     
     embed = discord.Embed(
