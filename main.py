@@ -308,9 +308,7 @@ async def marry(ctx, member: discord.Member = None):
             if interaction.user.id != member.id:
                 return await interaction.response.send_message("الطلب مو لك!", ephemeral=True)
             await interaction.response.edit_message(content=f"💔 {member.mention} رفض طلب الزواج.. خيرها بغيرها!", embed=None, view=None)
-
-    await ctx.send(embed=embed, view=MarriageView())
-# --- 1. قائمة الأسئلة التلقائية (تأكد من إغلاق القوس في النهاية) ---
+# --- 1. قائمة الأسئلة التلقائية ---
 questions_list = [
     "ما هي عاصمة الكويت؟",
     "من هو بطل أنمي ون بيس؟",
@@ -318,20 +316,35 @@ questions_list = [
     "ما هو أسرع حيوان بري؟",
     "من هو مؤلف جوجوتسو كايسن؟",
     "ما هو بطل Resident Evil 4؟"
-] # هذا القوس اللي كان ناقص في سطر 316
+]
+asked_questions = []
 
-# --- 2. قائمة خيارات لو خيروك ---
-choices = [
-    "تاكل صرصور حي 🪳 ولا تشرب عصير بصل؟ 🧅",
-    "تنام في غابة مسكونة 👻 ولا تسبح مع قروش؟ 🦈",
-    "تصير غني بس وحيد 💰 ولا فقير ومعك أعز أخوياك؟ 🤝",
-    "تلعب Resident Evil في الحقيقة 🧟 ولا تدخل عالم Jujutsu Kaisen؟ 🔥"
-] # وهذا القوس اللي كان ناقص في سطر 337
+# --- 2. نظام التوقيت ---
+@tasks.loop(hours=1)
+async def auto_question_task():
+    global asked_questions
+    target_channel = None
+    for guild in bot.guilds:
+        target_channel = discord.utils.get(guild.channels, name="الشات-العام💬")
+        if target_channel:
+            break
 
-# --- كود لعبة لو خيروك ---
-@bot.command(name="لو_خيروك")
-async def this_or_that(ctx):
- 
+    if target_channel:
+        if len(asked_questions) >= len(questions_list):
+            asked_questions = []
+        available = [q for q in questions_list if q not in asked_questions]
+        if available:
+            question = random.choice(available)
+            asked_questions.append(question)
+            embed = discord.Embed(title="❓ سؤال الساعة", description=f"**{question}**", color=0xFFD700)
+            await target_channel.send(embed=embed)
+
+# --- 3. تشغيل البوت والمهام ---
+@bot.event
+async def on_ready():
+    print(f"✅ {bot.user} متصل الآن!")
+    if not auto_question_task.is_running():
+        auto_question_task.start()
 
 # تشغيل البوت بسحب التوكن من GitHub
 token = os.getenv("TOKEN")
