@@ -147,7 +147,39 @@ async def games(ctx):
     embed.add_field(name="⚔️ ألعاب التحدي", value="`war` `arena` `mafia` `hunt`", inline=False)
     embed.set_footer(text="استخدم ! قبل اسم اللعبة للبدء")
     await ctx.send(embed=embed)
+import discord
+import os
+import random
+from discord.ext import commands, tasks
 
-# سحب التوكن من Variables
+intents = discord.Intents.all()
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+questions = [f"سؤال فعاليات رقم {i}" for i in range(1, 101)]
+
+@bot.event
+async def on_ready():
+    print(f"✅ {bot.user.name} ONLINE")
+    if not hourly_quest.is_running():
+        hourly_quest.start()
+
+@tasks.loop(hours=1)
+async def hourly_quest():
+    if questions:
+        for guild in bot.guilds:
+            channel = discord.utils.get(guild.text_channels, name="الشات-العام💬")
+            if channel:
+                q = random.choice(questions)
+                questions.remove(q)
+                embed = discord.Embed(title="⏰ فعالية الساعة", description=f"**{q}**", color=0xff0000)
+                await channel.send(embed=embed)
+                break
+
+@bot.command()
+async def games(ctx):
+    embed = discord.Embed(title="🎮 ألعاب سكاي", color=0x00ffff)
+    embed.add_field(name="🎰 الألعاب", value="`roulette` `slots` `dice` `math` `war`")
+    await ctx.send(embed=embed)
+
 token = os.getenv("TOKEN")
 bot.run(token)
