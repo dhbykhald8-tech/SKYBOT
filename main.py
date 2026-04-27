@@ -310,6 +310,45 @@ async def marry(ctx, member: discord.Member = None):
             await interaction.response.edit_message(content=f"💔 {member.mention} رفض طلب الزواج.. خيرها بغيرها!", embed=None, view=None)
 
     await ctx.send(embed=embed, view=MarriageView())
+# --- كود لعبة من فينا ---
+@bot.command(name="من_فينا")
+async def who_is_it(ctx):
+    questions = [
+        "من فينا أكثر واحد ينام؟ 😴",
+        "من فينا أكثر واحد يسحب على أخوياه؟ 🏃‍♂️",
+        "من فينا الهامور اللي بيصير مليونير؟ 💰",
+        "من فينا أكثر واحد يحب الأكل؟ 🍔",
+        "من فينا اللي دايم يضيع في الألعاب؟ 🧩",
+        "من فينا أكثر واحد يعصب وهو يلعب؟ 😡"
+    ]
+    import random
+    question = random.choice(questions)
+    
+    embed = discord.Embed(
+        title="🤔 من فينا؟",
+        description=f"**{question}**\n\nمنشن الشخص اللي تحس إنه هو المقصود! 😂",
+        color=discord.Color.blue()
+    )
+    await ctx.send(embed=embed)
+
+# --- كود لعبة لو خيروك ---
+@bot.command(name="لو_خيروك")
+async def this_or_that(ctx):
+    choices = [
+        "تاكل صرصور حي 🪳 ولا تشرب عصير بصل؟ 🧅",
+        "تنام في غابة مسكونة 👻 ولا تسبح مع قروش؟ 🦈",
+        "تصير غني بس وحيد 💰 ولا فقير ومعك أعز أخوياك؟ 🤝",
+        "تلعب Resident Evil في الحقيقة 🧟 ولا تدخل عالم Jujutsu Kaisen؟ 🔥"
+    ]
+    import random
+    choice = random.choice(choices)
+    
+    embed = discord.Embed(
+        title="⚖️ لو خيروك..",
+        description=f"**{choice}**",
+        color=discord.Color.orange()
+    )
+    await ctx.send(embed=embed)
 
 # تشغيل البوت بسحب التوكن من GitHub
 token = os.getenv("TOKEN")
