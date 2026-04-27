@@ -385,7 +385,7 @@ async def steal(ctx, member: discord.Member):
         penalty = 200
         data["users"][u_id]["balance"] -= penalty
         save_data(data)
-        await ctx.reply(f"🚨 انقفطت! {ctx.author.mention} حاول يسرق وانصاد، ودفع غرامة **200** كوينز! 😂")
+        await ctx.reply(f"🚨 انقفطت! {ctx.author.mention} حاول يسرق وانصاد، ودفع غرامة **50000** كوينز! 😂")
 # --- نظام الألعاب واللفلات الموحد ---
 
 # 1. إعداد الأسئلة
