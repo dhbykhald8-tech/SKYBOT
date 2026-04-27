@@ -314,3 +314,80 @@ async def divorce(ctx):
     user_data[uid]['partner'], user_data[pid]['partner'] = None, None
     save_data(user_data)
     await ctx.send("💔 تم الانفصال.. سحبنا رتبة متزوج وقسمنا الحساب بالنص.")
+import time # أضف هذا السطر في أعلى الكود مع المكتبات
+
+# --- تحديث أمر الزواج (إضافة تاريخ الزواج) ---
+@bot.command()
+async def marry(ctx, member: discord.Member, amount: int):
+    uid, mid = str(ctx.author.id), str(member.id)
+    if user_data[uid]['coins'] < amount: return await ctx.send("❌ ما عندك المهر!")
+    if user_data[uid].get('partner') or user_data[mid].get('partner'): return await ctx.send("أحدكم متزوج!")
+
+    view = discord.ui.View()
+    async def confirm(i):
+        if i.user != member: return
+        
+        # تسجيل البيانات وتاريخ الزواج (بالثواني)
+        user_data[uid]['partner'], user_data[mid]['partner'] = mid, uid
+        user_data[uid]['m_date'] = time.time() # تاريخ الزواج
+        user_data[mid]['m_date'] = time.time()
+        
+        user_data[uid]['coins'] -= amount
+        user_data[mid]['coins'] += amount
+        
+        main = uid if int(uid) < int(mid) else mid
+        other = mid if main == uid else uid
+        user_data[main]['coins'] += user_data[other]['coins']
+        user_data[other]['coins'] = 0
+        save_data(user_data)
+
+        role = discord.utils.get(ctx.guild.roles, name="متزوج")
+        if role:
+            try:
+                await ctx.author.add_roles(role)
+                await member.add_roles(role)
+            except: pass
+
+        await i.response.edit_message(content=f"💍 مبروك! تم الزواج بنجاح.\n⚠️ تنبيه: لا يمكن تقسيم الأموال عند الانفصال إلا بعد مرور **7 أيام**!", view=None)
+
+    btn = discord.ui.Button(label="موافقة ✅", style=discord.ButtonStyle.green)
+    btn.callback = confirm
+    view.add_item(btn)
+    await ctx.send(f"💍 {member.mention}، هل تقبل الزواج من {ctx.author.mention} بمهر {amount}؟", view=view)
+
+# --- تحديث أمر الانفصال (شرط الأسبوع) ---
+@bot.command()
+async def divorce(ctx):
+    uid = str(ctx.author.id)
+    if not user_data[uid].get('partner'): return await ctx.send("أنت لست متزوجاً!")
+    
+    pid = user_data[uid]['partner']
+    m_date = user_data[uid].get('m_date', 0)
+    current_time = time.time()
+    
+    # حساب الثواني في أسبوع (7 أيام * 24 ساعة * 60 دقيقة * 60 ثانية)
+    week_in_seconds = 7 * 24 * 60 * 60
+    
+    if current_time - m_date < week_in_seconds:
+        remaining = week_in_seconds - (current_time - m_date)
+        days = int(remaining // (24 * 3600))
+        hours = int((remaining % (24 * 3600)) // 3600)
+        return await ctx.send(f"❌ **عذراً!** لا يمكنك الانفصال وتقسيم الثروة إلا بعد مرور أسبوع على الزواج.\nباقي لكم: `{days} يوم و {hours} ساعة`.")
+
+    # إذا مر أسبوع، يتم الانفصال الطبيعي
+    role = discord.utils.get(ctx.guild.roles, name="متزوج")
+    if role:
+        try:
+            member_partner = ctx.guild.get_member(int(pid))
+            await ctx.author.remove_roles(role)
+            if member_partner: await member_partner.remove_roles(role)
+        except: pass
+
+    main = uid if int(uid) < int(pid) else pid
+    half = user_data[main]['coins'] // 2
+    user_data[uid]['coins'], user_data[pid]['coins'] = half, half
+    user_data[uid]['partner'], user_data[pid]['partner'] = None, None
+    user_data[uid]['m_date'], user_data[pid]['m_date'] = 0, 0
+    
+    save_data(user_data)
+    await ctx.send("💔 بعد صمود دام أكثر من أسبوع.. تم الانفصال وتقسيم الحساب بالنصف.")
