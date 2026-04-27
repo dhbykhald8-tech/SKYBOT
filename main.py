@@ -127,10 +127,17 @@ import discord
 from discord.ext import commands
 
 intents = discord.Intents.all()
+import discord
+import os
+from discord.ext import commands
+
+intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 @bot.event
 async def on_ready():
     print(f"✅ {bot.user.name} IS ONLINE!")
 
-bot.run("MTQ5ODEzOTEyODAzNzExMzg1Ng.GV5xER.lCtKXFA5ufKew9ElUx0PBCj_1SoREnVn43mDB0")
+# الكود الحين راح يسحب التوكن من الـ Variables اللي صورتها
+token = os.getenv("TOKEN")
+bot.run(token)
