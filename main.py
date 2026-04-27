@@ -308,7 +308,7 @@ async def marry(ctx, member: discord.Member = None):
             if interaction.user.id != member.id:
                 return await interaction.response.send_message("الطلب مو لك!", ephemeral=True)
             await interaction.response.edit_message(content=f"💔 {member.mention} رفض طلب الزواج.. خيرها بغيرها!", embed=None, view=None)
-            @bot.command(name="انفصال")
+     @bot.command(name="انفصال")
 async def divorce(ctx):
     data = load_data()
     u_id = str(ctx.author.id)
@@ -327,83 +327,6 @@ async def divorce(ctx):
     
     save_data(data)
     await ctx.reply(f"💔 تم الانفصال بنجاح.. {ctx.author.mention} صار عزوبي ورجع لسوق العمل! 😂")
-
-# --- امسح من سطر 311 وحط هذا مكانه ---
-questions_list = [
-    "من هو الشخصية التي لقبت بـ 'الوميض الأصفر' في أنمي ناروتو؟",
-    "ما اسم السيف الذي يستخدمه زورو ويقال أنه ملعون؟",
-    "في لعبة Resident Evil 4، ما اسم ابنة الرئيس التي ينقذها ليون؟",
-    "ما هو اسم الأنمي الذي تدور أحداثه حول كرة القدم وسجن 'القفل الأزرق'؟",
-    "من هو بطل سلسلة ألعاب God of War؟",
-    "ما اسم الشيطان الذي يسكن داخل جسد يوجي إيتادوري؟",
-    "في لعبة Elden Ring، ما هو اللقب الذي يطلق على اللاعب؟",
-    "ما هو اسم الأنمي الذي يقاتل فيه البشر عمالقة؟",
-    "من هي الشخصية التي تمتلك 'مفكرة الموت'؟",
-    "ما اسم القرية التي ينتمي إليها ناروتو؟"
-]
-asked_questions = []
-last_question = None
-
-@bot.event
-async def on_message(message):
-    global last_question
-    if message.author == bot.user:
-        return
-
-    answers = {
-        "من هو الشخصية التي لقبت بـ 'الوميض الأصفر' في أنمي ناروتو؟": "ميناتو",
-        "ما اسم السيف الذي يستخدمه زورو ويقال أنه ملعون؟": "كيتاتسو",
-        "في لعبة Resident Evil 4، ما اسم ابنة الرئيس التي ينقذها ليون؟": "آشلي",
-        "ما هو اسم الأنمي الذي تدور أحداثه حول كرة القدم وسجن 'القفل الأزرق'؟": "بلو لوك",
-        "من هو بطل سلسلة ألعاب God of War؟": "كريتوس",
-        "ما اسم الشيطان الذي يسكن داخل جسد يوجي إيتادوري؟": "سوكونا",
-        "في لعبة Elden Ring، ما هو اللقب الذي يطلق على اللاعب؟": "تارنيشد",
-        "ما هو اسم الأنمي الذي يقاتل فيه البشر عمالقة؟": "هجوم العمالقة",
-        "من هي الشخصية التي تمتلك 'مفكرة الموت'؟": "لايت",
-        "ما اسم القرية التي ينتمي إليها ناروتو؟": "كونوها"
-    }
-
-    if last_question in answers:
-        if message.content.strip() == answers[last_question]:
-            data = load_data()
-            u_id = str(message.author.id)
-            if u_id not in data["users"]:
-                data["users"][u_id] = {"balance": 0, "married_to": None}
-            data["users"][u_id]["balance"] += 2000
-            save_data(data)
-            await message.reply(f"✅ كفو يا **{message.author.display_name}**! فزت بـ **2000 كوينز** 💰")
-            last_question = None
-            return
-
-    await bot.process_commands(message)
-
-@tasks.loop(hours=1)
-async def auto_question_task():
-    global asked_questions, last_question
-    target_channel = discord.utils.get(bot.get_all_channels(), name="الشات-العام💬")
-    if target_channel:
-        if len(asked_questions) >= len(questions_list):
-            asked_questions = []
-        available = [q for q in questions_list if q not in asked_questions]
-        if available:
-            question = random.choice(available)
-            asked_questions.append(question)
-            last_question = question
-            embed = discord.Embed(title="❓ سؤال الساعة", description=f"**{question}**", color=0xFFD700)
-            await target_channel.send(embed=embed)
-
-@bot.event
-async def on_ready():
-    print(f"✅ {bot.user} متصل الآن!")
-    if not auto_question_task.is_running():
-        auto_question_task.start()
-
-# تشغيل البوت - تأكد أن TOKEN موجود في الـ Variables بـ Railway
-token = os.getenv("TOKEN")
-if token:
-    bot.run(token)
-else:
-    print("❌ خطأ: TOKEN غير موجود")
 
 # تشغيل البوت بسحب التوكن من GitHub
 token = os.getenv("TOKEN")
