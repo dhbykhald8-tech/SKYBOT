@@ -189,4 +189,30 @@ async def sky10(ctx):
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
+# أضف هذا السطر فوق تحت تعريف الـ user_data
+questions_pool = []
 
+@tasks.loop(hours=1)
+async def auto_event():
+    channel = discord.utils.get(bot.get_all_channels(), name=CHAT_ROOM_NAME)
+    if not channel: return
+    
+    global current_q, questions_pool
+    
+    # إذا خلصت الأسئلة أو لسه ما تعبت، نعبيها من جديد
+    if not questions_pool:
+        # هنا تحط القائمة الكبيرة (الـ 100 سؤال)
+        questions_pool = [
+            {"q": "كم عدد أركان الإسلام؟", "a": "5"},
+            {"q": "ماهي عاصمة الكويت؟", "a": "الكويت"},
+            # ... باقي الـ 100 سؤال هنا ...
+        ]
+        random.shuffle(questions_pool) # يخلطهم عشان الترتيب يتغير كل مرة
+
+    # نسحب سؤال ونحذفه من القائمة عشان ما يرجع
+    current_q = questions_pool.pop()
+    
+    embed = discord.Embed(title="🎮 فعالية سكاي المنوعة", 
+                          description=f"**السؤال:** {current_q['q']}\n\nأسرع واحد يجاوب ياخذ **2000 كوينز**!", 
+                          color=0x3498db)
+    await channel.send(embed=embed)
