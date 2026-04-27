@@ -123,5 +123,14 @@ async def sky10(ctx):
 async def on_ready():
     hourly_event.start()
     print("SKY BOT READY")
+import discord
+from discord.ext import commands
 
-bot.run("MTQ5ODEzOTEyODAzNzExMzg1Ng.G10oo-.PLwpVKCExv002UW-DF6xBrGxc32rJxM22TTVw0")
+intents = discord.Intents.all()
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+@bot.event
+async def on_ready():
+    print(f"✅ {bot.user.name} IS ONLINE!")
+
+bot.run("MTQ5ODEzOTEyODAzNzExMzg1Ng.GV5xER.lCtKXFA5ufKew9ElUx0PBCj_1SoREnVn43mDB0")
