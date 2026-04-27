@@ -308,6 +308,26 @@ async def marry(ctx, member: discord.Member = None):
             if interaction.user.id != member.id:
                 return await interaction.response.send_message("الطلب مو لك!", ephemeral=True)
             await interaction.response.edit_message(content=f"💔 {member.mention} رفض طلب الزواج.. خيرها بغيرها!", embed=None, view=None)
+            @bot.command(name="انفصال")
+async def divorce(ctx):
+    data = load_data()
+    u_id = str(ctx.author.id)
+    
+    # التأكد إذا كان الشخص متزوج أصلاً
+    if u_id not in data["users"] or not data["users"][u_id].get("married_to"):
+        await ctx.reply("❌ أنت عزوبي أصلاً، من منو تبي تنفصل؟ 😂")
+        return
+
+    partner_id = data["users"][u_id]["married_to"]
+    
+    # مسح بيانات الزواج للطرفين
+    data["users"][u_id]["married_to"] = None
+    if partner_id in data["users"]:
+        data["users"][partner_id]["married_to"] = None
+    
+    save_data(data)
+    await ctx.reply(f"💔 تم الانفصال بنجاح.. {ctx.author.mention} صار عزوبي ورجع لسوق العمل! 😂")
+
 # --- امسح من سطر 311 وحط هذا مكانه ---
 questions_list = [
     "من هو الشخصية التي لقبت بـ 'الوميض الأصفر' في أنمي ناروتو؟",
