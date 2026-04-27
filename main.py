@@ -408,3 +408,6 @@ async def auto_event():
 async def on_ready():
     if not auto_event.is_running():
         auto_event.start()
+@bot.command(aliases=['games', 'العاب'])
+async def help_cmd(ctx):
+    await ctx.send("🎮 ألعاب البوت: \n1. فعاليات كل ساعة \n2. نظام الزواج \n3. نظام السرقة")
