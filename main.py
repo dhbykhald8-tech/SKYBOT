@@ -354,46 +354,40 @@ async def show_profile(ctx, member: discord.Member = None):
 @bot.event
 async def on_ready():
     print(f"✅ {bot.user} متصل وشغال!")
-import random
     @bot.command(name="steal")
-    async def steal(ctx, member: discord.Member):
-        if member == ctx.author:
-            return await ctx.reply("تبوق نفسك؟ GTA صرنا في؟ 😂")
-            
-        data = load_data()
-        u_id = str(ctx.author.id)
-        t_id = str(member.id)
+async def steal(ctx, member: discord.Member):
+    if member == ctx.author:
+        return await ctx.reply("تبوق نفسك؟ صرنا في GTA؟ 😂")
         
-        # التأكد من وجود الحسابات
-        if u_id not in data["users"]: data["users"][u_id] = {"balance": 0}
-        if t_id not in data["users"]: data["users"][t_id] = {"balance": 0}
+    data = load_data()
+    u_id = str(ctx.author.id)
+    t_id = str(member.id)
+    
+    if u_id not in data["users"]: data["users"][u_id] = {"balance": 0}
+    if t_id not in data["users"]: data["users"][t_id] = {"balance": 0}
 
-        # نسبة النجاح 50%
-              # نسبة النجاح 20% والفشل 80%
-        success = random.randint(1, 100) <= 20
-
-        if success:
-            stolen_amount = random.randint(50000 100000)
-            data["users"][u_id]["balance"] += stolen_amount
-            data["users"][t_id]["balance"] -= stolen_amount
-            save_data(data)
-            await ctx.reply(f"🎯 **كفو!** سرقت منك {member.mention} مبلغ **{stolen_amount:,}** كوينز بنجاح!")
-        else:
-            # --- ميزة الكتم إذا ما عنده حق الغرامه ---
-            penalty = 50000 # مبلغ الغرامة
-            current_bal = data["users"][u_id].get("balance", 0)
-            
-            if current_bal < penalty:
-                try:
-                    # كتم لمدة 5 دقائق
-                    await ctx.author.timeout(datetime.timedelta(minutes=5), reason="طفران ويبي يسرق")
-                    await ctx.reply(f"🚨 انصدت وأنت طفران! تم كتمك **5 دقائق** عشان تتربى وما تسرق وأنت ما عندك حق الغرامة. 🤐")
-                except:
-                    await ctx.reply(f"🚨 انصدت وما عندك فلوس! كان ودي أكتمك بس ما عندي صلاحيات.")
-            else:
-                data["users"][u_id]["balance"] -= penalty
-                save_data(data)
-                await ctx.reply(f"🚨 **انقفطت!** حاول يسرق وانصاد، ودفع غرامة **{penalty}** كوينز.")
+    # نسبة النجاح 20% والفشل 80%
+  if random.randint(1, 100) <= 20:
+  stolen = random.randint(100, 500)
+  data["users"][u_id]["balance"] += stolen
+   data["users"][t_id]["balance"] -= stolen
+  save_data(data)
+await ctx.reply(f"🎯 **عملية ناجحة!** سرقت **{stolen}** كوينز من {member.mention}!")
+    else:
+ penalty = 200 # مبلغ الغرامة
+ current_bal = data["users"][u_id].get("balance", 0)
+        
+ if current_bal < penalty:50000
+    try:
+    # كتم 5 دقائق للطفران (تأكد من وجود import datetime فوق)
+ await ctx.author.timeout(datetime.timedelta(minutes=5), reason="طفران ويبي يسرق")
+await ctx.reply(f"🚨 انصدت وأنت طفران! تم كتمك **5 دقائق** عشان تتربى. 🤐")
+ except:
+await ctx.reply(f"🚨 انصدت وما عندك فلوس، بس ما قدرت أكتمك!")
+  else:
+  data["users"][u_id]["balance"] -= penalty
+ save_data(data)
+ await ctx.reply(f"🚨 **انقفطت!** ودفعناك غرامة **{penalty}** كوينز.")
 
 # 1. إعداد الأسئلة
 game_questions = {
