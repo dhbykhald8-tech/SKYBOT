@@ -1,127 +1,133 @@
 import discord
+from discord.ext import commands
+from discord.ui import Button, View
 import os
 import random
 import asyncio
 
+# إعدادات البوت الأساسية
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
-
-client = discord.Client(intents=intents)
+bot = commands.Bot(command_prefix='!', intents=intents)
 
 user_xp = {}
-
-# اسم الرتبة المسموح لها باللعب
 REQUIRED_ROLE_NAME = "فعاليات"
 
-@client.event
+@bot.event
 async def on_ready():
-    print(f'Logged in as {client.user}')
+    print(f'Logged in as {bot.user}')
 
-@client.event
-async def on_message(message):
-    if message.author.bot:
+# --- كود لعبة الروليت (التحكم بالأزرار) ---
+
+class RouletteView(View):
+    def __init__(self, ctx):
+        super().__init__(timeout=40)
+        self.ctx = ctx
+        self.players = []
+
+    @discord.ui.button(label="انضمام (Join)", style=discord.ButtonStyle.green)
+    async def join_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user in self.players:
+            await interaction.response.send_message("أنت موجود فعلاً في القائمة!", ephemeral=True)
+        else:
+            self.players.append(interaction.user)
+            player_names = "\n".join([p.name for p in self.players])
+            embed = discord.Embed(title="🎮 لعبة الروليت - تسجيل اللاعبين", description=f"المشاركين حالياً:\n{player_names}", color=0x00ff00)
+            await interaction.response.edit_message(embed=embed, view=self)
+
+@bot.command(name="roulette")
+async def start_roulette(ctx):
+    # فحص الرتبة
+    has_role = any(role.name == REQUIRED_ROLE_NAME for role in ctx.author.roles)
+    if not has_role:
+        await ctx.send(f"❌ عفواً {ctx.author.mention}، لازم رتبة **({REQUIRED_ROLE_NAME})**")
         return
 
-    user_id = str(message.author.id)
-    if user_id not in user_xp:
-        user_xp[user_id] = {'xp': 0, 'level': 1}
-    
-    user_xp[user_id]['xp'] += 10
-    xp = user_xp[user_id]['xp']
-    lvl = user_xp[user_id]['level']
-    
-    if xp >= (lvl * 100):
-        user_xp[user_id]['level'] += 1
-        await message.channel.send(f'مبروك {message.author.mention}! ارتفع مستواك إلى لفل {lvl + 1} 🆙')
+    view = RouletteView(ctx)
+    embed = discord.Embed(title="🎮 فعاليات: لعبة الروليت", description="اضغط على الزر تحت عشان تشارك! لازم 4 لاعبين على الأقل.\nالوقت: 40 ثانية.", color=0x3498db)
+    initial_msg = await ctx.send(embed=embed, view=view)
 
-    # قائمة الأوامر اللي تبدأ بـ ! أو - (الألعاب)
-    game_commands = ['!slots', '!fast', '!roll', '!flip', '!guess', '!rps', '!8ball', '-games']
-    
-    # فحص إذا كانت الرسالة عبارة عن أمر لعبة
-    is_game_command = any(message.content.startswith(cmd) for cmd in game_commands)
+    await asyncio.sleep(40) # وقت الانتظار
+    view.stop()
 
-    if is_game_command:
-        # فحص إذا كان الشخص عنده رتبة "فعاليات"
-        has_role = any(role.name == REQUIRED_ROLE_NAME for role in message.author.roles)
+    if len(view.players) < 4:
+        await ctx.send(f"❌ الغاء اللعبة! عدد المشاركين قليل ({len(view.players)}/4)")
+        return
+
+    active_players = view.players.copy()
+
+    while len(active_players) > 1:
+        chosen_one = random.choice(active_players)
+        await ctx.send(f"🔄 جاري تدوير الروليت...\n🎯 السهم وقف عند: **{chosen_one.mention}**! أنت الآن تختار مين يطرد.")
+
+        # صنع أزرار بأسماء اللاعبين الآخرين للطرد
+        class KickView(View):
+            def __init__(self, selector, current_players):
+                super().__init__(timeout=20)
+                self.selector = selector
+                self.kicked_user = None
+                for p in current_players:
+                    if p != selector:
+                        btn = Button(label=f"طرد {p.name}", style=discord.ButtonStyle.danger, custom_id=str(p.id))
+                        btn.callback = self.make_callback(p)
+                        self.add_item(btn)
+
+            def make_callback(self, user):
+                async def callback(interaction: discord.Interaction):
+                    if interaction.user != self.selector:
+                        await interaction.response.send_message("مو دورك تختار!", ephemeral=True)
+                        return
+                    self.kicked_user = user
+                    self.stop()
+                return callback
+
+        k_view = KickView(chosen_one, active_players)
+        kick_msg = await ctx.send(f"يا {chosen_one.mention}، اختر اللاعب اللي تبي تطرده من الأزرار تحت:", view=k_view)
         
-        if not has_role:
-            await message.channel.send(f"❌ عفواً {message.author.mention}، لازم يكون معك رتبة **({REQUIRED_ROLE_NAME})** عشان تقدر تلعب!")
-            return
+        await k_view.wait()
 
-    # --- الألعاب وفعاليات البوت ---
-
-    if message.content == '-games':
-        help_text = (
-            "🎮 **قائمة ألعاب سكاي بوت:**\n"
-            "`!level` - لمعرفة لفلك ونقاطك\n"
-            "`!slots` - لعبة آلة الحظ (الفواكه)\n"
-            "`!fast` - اختبار سرعة الكتابة\n"
-            "`!roll` - رمي النرد\n"
-            "`!flip` - رمي العملة\n"
-            "`!guess` - تخمين الرقم\n"
-            "`!rps` - حجر ورقة مقص\n"
-            "`!8ball` - اسأل الكرة السحرية"
-        )
-        await message.channel.send(help_text)
-
-    if message.content == '!level':
-        await message.channel.send(f'مستواك الحالي: {user_xp[user_id]["level"]} | نقاطك: {user_xp[user_id]["xp"]} XP')
-
-    if message.content == '!slots':
-        emojis = "🍎🍊🍇💎⭐"
-        a, b, c = random.choice(emojis), random.choice(emojis), random.choice(emojis)
-        res = f"**[ {a} | {b} | {c} ]**\n"
-        if a == b == c: await message.channel.send(f"{res} 🎉 كفوووو! فزت بالجائزة الكبرى!")
-        elif a == b or b == c or a == c: await message.channel.send(f"{res} ✨ قريبة! حبتين متشابهة.")
-        else: await message.channel.send(f"{res} ❌ حظ أوفر المرة الجاية.")
-
-    if message.content == '!fast':
-        words = ["كويت", "برمجة", "ديسكورد", "سرعة", "لعبة", "تطوير", "سريع", "فائز"]
-        target = random.choice(words)
-        await message.channel.send(f"اكتب الكلمة التالية بأسرع ما يمكن: **{target}**")
-        def check(m): return m.author == message.author and m.channel == message.channel and m.content == target
-        try:
-            await client.wait_for('message', check=check, timeout=8.0)
-            await message.channel.send(f"⚡ وحش يا {message.author.mention}! كتبتها بالوقت المناسب!")
-        except asyncio.TimeoutError:
-            await message.channel.send(f"⏰ انتهى الوقت! الكلمة كانت: **{target}**")
-
-    if message.content == '!roll':
-        await message.channel.send(f"🎲 طلع لك الرقم: **{random.randint(1, 6)}**")
-
-    if message.content == '!flip':
-        res = random.choice(['وجه (ملك)', 'كتابة'])
-        await message.channel.send(f"🪙 النتيجة هي: **{res}**")
-
-    if message.content.startswith('!guess'):
-        num = random.randint(1, 10)
-        await message.channel.send("خمن رقم بين 1 و 10:")
-        def check_guess(m): return m.author == message.author and m.channel == message.channel and m.content.isdigit()
-        try:
-            g = await client.wait_for('message', check=check_guess, timeout=10.0)
-            if int(g.content) == num: await message.channel.send(f"✅ صح! الرقم هو {num}")
-            else: await message.channel.send(f"❌ خطأ، الرقم كان {num}")
-        except: await message.channel.send("⌛ تأخرت بالتخمين!")
-
-    if message.content.startswith('!rps'):
-        options = ["حجر", "ورقة", "مقص"]
-        bot_choice = random.choice(options)
-        user_choice = message.content.split()[-1] if len(message.content.split()) > 1 else None
-        if user_choice not in options:
-            await message.channel.send("طريقة اللعب: `!rps حجر` أو `!rps ورقة` أو `!rps مقص`")
+        if k_view.kicked_user:
+            active_players.remove(k_view.kicked_user)
+            await ctx.send(f"🚫 تم طرد **{k_view.kicked_user.name}** من اللعبة!")
         else:
-            if user_choice == bot_choice: result = "تعادل! 🤝"
-            elif (user_choice == "حجر" and bot_choice == "مقص") or \
-                 (user_choice == "ورقة" and bot_choice == "حجر") or \
-                 (user_choice == "مقص" and bot_choice == "ورقة"):
-                result = "فزت علي! 🎉"
-            else: result = "أنا فزت! 🤖"
-            await message.channel.send(f"أنا اخترت **{bot_choice}**. {result}")
+            # لو انتهى الوقت وما اختار، نطرد واحد عشوائي غير المختار
+            others = [p for p in active_players if p != chosen_one]
+            auto_kick = random.choice(others)
+            active_players.remove(auto_kick)
+            await ctx.send(f"⌛ انتهى الوقت! البوت طرد **{auto_kick.name}** عشوائياً.")
 
-    if message.content.startswith('!8ball'):
-        responses = ["نعم بالتأكيد", "لا أظن ذلك", "ممكن", "اسأل لاحقاً", "من المستحيل", "طبعاً"]
-        await message.channel.send(f"🔮 الكرة السحرية تقول: **{random.choice(responses)}**")
+        if len(active_players) == 1:
+            await ctx.send(f"🎊 مبروك الفوز يا **{active_players[0].mention}**! أنت الناجي الوحيد!")
+            break
+
+# --- الأوامر العادية (محدثة لتعمل مع bot.command) ---
+
+@bot.event
+async def on_message(message):
+    if message.author.bot: return
+    # نظام اللفل XP
+    uid = str(message.author.id)
+    if uid not in user_xp: user_xp[uid] = {'xp': 0, 'level': 1}
+    user_xp[uid]['xp'] += 10
+    if user_xp[uid]['xp'] >= (user_xp[uid]['level'] * 100):
+        user_xp[uid]['level'] += 1
+        await message.channel.send(f"🆙 مبروك {message.author.mention} لفل {user_xp[uid]['level']}!")
+    
+    await bot.process_commands(message)
+
+@bot.command()
+async def games(ctx):
+    has_role = any(role.name == REQUIRED_ROLE_NAME for role in ctx.author.roles)
+    if not has_role: return
+    await ctx.send("🎮 الألعاب:\n`!roulette` - لعبة الروليت (4 أشخاص+)\n`!level` - لفلُك")
+
+@bot.command()
+async def level(ctx):
+    uid = str(ctx.author.id)
+    lvl = user_xp.get(uid, {'level': 1})['level']
+    xp = user_xp.get(uid, {'xp': 0})['xp']
+    await ctx.send(f"مستواك: {lvl} | نقاطك: {xp} XP")
 
 token = os.getenv('DISCORD_TOKEN')
-client.run(token)
+bot.run(token)
