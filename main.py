@@ -193,7 +193,7 @@ async def games(ctx):
 
 # --- أمثلة تشغيل الألعاب (تقدر تضيف الأكواد لكل لعبة تحت) ---
 
-@bot.command(name="لو_خيروك")
+@bot.command(name="")
 async def choose_game(ctx):
     options = ["تآكل بصلة نية 🧅", "تسبح بثلج ❄️", "تنام بالشارع 🛣️", "تعطي كل كوينزك للي فوقك 💰"]
     q = f"{random.choice(options)} أو {random.choice(options)}؟"
@@ -311,7 +311,7 @@ async def marry(ctx, member: discord.Member = None):
 
     await ctx.send(embed=embed, view=MarriageView())
 # --- كود لعبة من فينا ---
-@bot.command(name="من_فينا")
+@bot.command(name="")
 async def who_is_it(ctx):
     questions = [
         "من فينا أكثر واحد ينام؟ 😴",
