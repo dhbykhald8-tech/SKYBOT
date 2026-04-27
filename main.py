@@ -631,3 +631,95 @@ async def marry(ctx, m: discord.Member, amt: int):
     save_data(user_data); await ctx.send(f"💍 مبروك الزواج لـ {ctx.author.mention} و {m.mention}")
 
 bot.run("YOUR_TOKEN")
+import discord
+from discord.ext import commands
+import random, json, asyncio
+
+intents = discord.Intents.all()
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+# --- نظام البيانات ---
+def load_data():
+    try:
+        with open('users.json', 'r') as f: return json.load(f)
+    except: return {}
+
+def save_data(data):
+    with open('users.json', 'w') as f: json.dump(data, f, indent=4)
+
+def load_qs():
+    try:
+        with open('questions.json', 'r', encoding='utf-8') as f: return json.load(f)
+    except: return []
+
+user_data = load_data()
+all_questions = load_qs()
+
+def check_u(uid):
+    if uid not in user_data: 
+        user_data[uid] = {'coins': 1000, 'partner': None, 'last_daily': ""}
+
+# --- نظام التحقق الجديد (مرن أكثر) ---
+async def is_allowed(ctx):
+    # إذا تبي تحصر الروم بالاسم، تأكد إنه مطابق 100%
+    allowed_rooms = ['الشات-العام💬', 'الشات-العام'] 
+    if ctx.channel.name not in allowed_rooms: return False
+    
+    role = discord.utils.get(ctx.author.roles, name="فعاليات")
+    if role is None:
+        await ctx.send("❌ لازم رتبة **فعاليات**!")
+        return False
+    return True
+
+# --- 1. القائمة المحدثة ---
+@bot.command()
+async def games(ctx):
+    if not await is_allowed(ctx): return
+    embed = discord.Embed(title="🎮 ترسانة ألعاب سكاي", color=0x3498db)
+    embed.add_field(name="🎰 الحظ", value="`!roulette` `!adventure` `!flip` `!slots`", inline=True)
+    embed.add_field(name="🌪️ المسابقات", value="`!تحدي` `!top` (الأغنى)", inline=True)
+    embed.add_field(name="💰 النظام المالي", value="`!bal` `!daily` `!rob` `!marry`", inline=False)
+    await ctx.send(embed=embed)
+
+# --- 2. لوحة الشرف (Top 10) ---
+@bot.command()
+async def top(ctx):
+    if not await is_allowed(ctx): return
+    sorted_users = sorted(user_data.items(), key=lambda x: x[1]['coins'], reverse=True)[:10]
+    leaderboard = "\n".join([f"**#{i+1}** <@{uid}>: {data['coins']} 💰" for i, (uid, data) in enumerate(sorted_users)])
+    embed = discord.Embed(title="🏆 أغنى 10 في السيرفر", description=leaderboard, color=0xffd700)
+    await ctx.send(embed=embed)
+
+# --- 3. نظام السرقة (Rob) ---
+@bot.command()
+async def rob(ctx, member: discord.Member):
+    if not await is_allowed(ctx): return
+    u, t = str(ctx.author.id), str(member.id)
+    check_u(u); check_u(t)
+    if user_data[t]['coins'] < 500: return await ctx.send("المستهدف طفران، ما يسوى تسرقه!")
+    
+    if random.random() > 0.7: # نسبة النجاح 30%
+        stolen = random.randint(100, 500)
+        user_data[u]['coins'] += stolen
+        user_data[t]['coins'] -= stolen
+        await ctx.send(f"🥷 كفو! سرقت من {member.mention} مبلغ {stolen} كوينز")
+    else:
+        fine = 300
+        user_data[u]['coins'] -= fine
+        await ctx.send(f"👮 انقفشت! دفعوك غرامة {fine} كوينز لـ {member.mention}")
+    save_data(user_data)
+
+# --- 4. الهدية اليومية (Daily) ---
+@bot.command()
+async def daily(ctx):
+    if not await is_allowed(ctx): return
+    uid = str(ctx.author.id); check_u(uid)
+    # ملاحظة: هذا نظام بسيط، للتطوير نحتاج مكتبة datetime
+    amt = 500
+    user_data[uid]['coins'] += amt
+    save_data(user_data)
+    await ctx.send(f"🎁 أخذت هديتك اليومية {amt} كوينز!")
+
+# --- (أضف باقي الأوامر السابقة هنا: تحدي، روليت، زواج) ---
+
+bot.run("YOUR_TOKEN")
