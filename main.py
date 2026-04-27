@@ -124,4 +124,4 @@ async def on_ready():
     hourly_event.start()
     print("SKY BOT READY")
 
-bot.run("MTQ5ODEzOTEyODAzNzExMzg1Ng.Gn9Dos.At1iIonrXtoYUb1u-xHzdQ6pie6hy99FRnLCmU")
+bot.run("MTQ5ODEzOTEyODAzNzExMzg1Ng.G10oo-.PLwpVKCExv002UW-DF6xBrGxc32rJxM22TTVw0")
