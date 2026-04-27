@@ -14,8 +14,8 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 user_xp = {}
 REQUIRED_ROLE_NAME = "فعاليات"
-# تم وضع الاسم بالضبط: الترحيب، البالون، النقطة، ثم welcome
-WELCOME_CHANNEL_NAME = "الترحيب🎈.welcome"
+# تعديل اسم الروم إلى "ترحيب" فقط
+WELCOME_CHANNEL_NAME = "ترحيب"
 
 @bot.event
 async def on_ready():
@@ -23,6 +23,7 @@ async def on_ready():
 
 @bot.event
 async def on_member_join(member):
+    # البحث عن القناة باسم "ترحيب"
     channel = discord.utils.get(member.guild.text_channels, name=WELCOME_CHANNEL_NAME)
     if channel:
         try:
@@ -39,7 +40,7 @@ async def on_member_join(member):
             file = discord.File(fp=background.image_bytes, filename="welcome.png")
             await channel.send(f"حياك الله {member.mention} نورتنا! ☁️✨", file=file)
         except:
-            await channel.send(f"منور السيرفر {member.mention}!")
+            await channel.send(f"منور السيرفر يا {member.mention}!")
 
 @bot.event
 async def on_message(message):
