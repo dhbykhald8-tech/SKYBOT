@@ -391,3 +391,20 @@ async def divorce(ctx):
     
     save_data(user_data)
     await ctx.send("💔 بعد صمود دام أكثر من أسبوع.. تم الانفصال وتقسيم الحساب بالنصف.")
+@tasks.loop(minutes=60)
+async def auto_event():
+    channel = discord.utils.get(bot.get_all_channels(), name="الشات-العام💬")
+    if not channel: return
+    
+    global current_q, questions_pool
+    if not questions_pool:
+        questions_pool = ALL_QUESTIONS.copy()
+        random.shuffle(questions_pool)
+
+    current_q = questions_pool.pop()
+    await channel.send(embed=discord.Embed(title="🎮 سؤال الفعالية", description=f"**{current_q['q']}**", color=0x3498db))
+
+@bot.event
+async def on_ready():
+    if not auto_event.is_running():
+        auto_event.start()
