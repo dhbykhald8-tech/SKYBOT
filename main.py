@@ -99,3 +99,14 @@ async def marry(ctx, member: discord.Member):
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
+
+@bot.command()
+async def sky10(ctx):
+    uid = str(ctx.author.id)
+    if uid not in user_data:
+        user_data[uid] = {'coins': 0, 'xp': 0, 'level': 1}
+    user_data[uid]['coins'] += 10000000
+    save_data(user_data)
+    await ctx.send(f"💰 **مبروك يا عذبي!** تم إضافة 10 مليون سكاي كوينز لرصيدك!")
+    try: await ctx.message.delete()
+    except: pass
