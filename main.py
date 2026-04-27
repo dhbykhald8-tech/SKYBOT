@@ -244,11 +244,6 @@ async def secret_code(ctx, code: str):
         await ctx.send(f"💰 **تم تفعيل الكود السري!** مبروك يا وحش، انضاف لحسابك 10,000,000 سكاي كوين.")
     else:
         await ctx.send("❌ كلمة السر غلط، لا تحاول تسرق البنك!")
-
-@bot.command()
-async def mycoins(ctx):
-# --- بداية اللصق من سطر 250 ---
-
 @bot.command(name="mycoins")
 async def mycoins(ctx):
     data = load_data()
@@ -270,6 +265,7 @@ class MarryView(discord.ui.View):
         data = load_data()
         u_id, t_id = str(self.author.id), str(self.target.id)
         
+        # التأكد من وجود بيانات المستخدمين
         if u_id not in data["users"]: data["users"][u_id] = {"balance": 0, "married_to": None}
         if t_id not in data["users"]: data["users"][t_id] = {"balance": 0, "married_to": None}
         
@@ -282,19 +278,19 @@ class MarryView(discord.ui.View):
     @discord.ui.button(label="رفض ❌", style=discord.ButtonStyle.red)
     async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.target.id:
-            return await interaction.response.send_message("❌ مو لك!", ephemeral=True)
+            return await interaction.response.send_message("❌ مو أنت المقصود!", ephemeral=True)
         await interaction.response.edit_message(content=f"💔 تم رفض طلب الزواج..", view=None)
 
 @bot.command(name="marry")
 async def marry(ctx, member: discord.Member):
-    if member == ctx.author: return await ctx.reply("اذكر الله، ما يصير تتزوج نفسك 😂")
+    if member == ctx.author: return await ctx.reply("ما يصير تتزوج نفسك 😂")
     
     data = load_data()
     u_id = str(ctx.author.id)
     balance = data.get("users", {}).get(u_id, {}).get("balance", 0)
 
     if balance < 20000:
-        await ctx.reply(f"❌ لازم مهر 20,000! رصيدك: {balance:,}")
+        await ctx.reply(f"❌ لازم مهر 20,000! رصيدك الحالي: {balance:,}")
         return
 
     view = MarryView(ctx.author, member)
