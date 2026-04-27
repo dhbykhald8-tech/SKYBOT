@@ -493,3 +493,59 @@ async def hourly_quest():
 
 token = os.getenv("TOKEN")
 bot.run(token)
+import discord
+import os
+import random
+from discord.ext import commands, tasks
+
+intents = discord.Intents.all()
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+# تخزين البيانات
+user_data = {}
+
+def check_u(uid):
+    if uid not in user_data:
+        user_data[uid] = {'sky_coins': 1000, 'level': 1, 'xp': 0}
+
+@bot.event
+async def on_ready():
+    print(f"✅ {bot.user.name} ONLINE")
+    if not hourly_quest.is_running():
+        hourly_quest.start()
+
+@bot.command()
+async def coins(ctx):
+    uid = str(ctx.author.id)
+    check_u(uid)
+    balance = user_data[uid]['sky_coins']
+    embed = discord.Embed(
+        title="💰 بنك سكاي",
+        description=f"رصيدك الحالي هو:\n**{balance:,} Sky Coins 🪙**",
+        color=0x00ffff
+    )
+    await ctx.send(embed=embed)
+
+@bot.command()
+async def level(ctx):
+    uid = str(ctx.author.id)
+    check_u(uid)
+    lvl = user_data[uid]['level']
+    xp = user_data[uid]['xp']
+    await ctx.send(f"📊 | {ctx.author.mention}\n**Level: {lvl} | XP: {xp}**")
+
+# نظام الفعاليات
+questions = ["من بطل ريزدنت ايفل 4؟", "وش اسم تقنية غوجو؟", "مدينة GTA V؟"]
+
+@tasks.loop(hours=1)
+async def hourly_quest():
+    for guild in bot.guilds:
+        channel = discord.utils.get(guild.text_channels, name="الشات-العام💬")
+        if channel and questions:
+            q = random.choice(questions)
+            embed = discord.Embed(title="⏰ فعالية الساعة", description=f"**{q}**", color=0xff0000)
+            await channel.send(embed=embed)
+            break
+
+token = os.getenv("TOKEN")
+bot.run(token)
