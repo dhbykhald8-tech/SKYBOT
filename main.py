@@ -404,451 +404,70 @@ questions = [
     "ما اسم والد غون؟", "من هو صديق غون المفضل؟",
     "ما هي فئة كيلوا في استعمال النين؟", "من هو الشخص الذي يسعى كورابيكا للانتقام منه؟",
     "ما اسم القارة المحرمة في هنتر؟", "من هو رئيس جمعية الصيادين السابق؟"
-]
+import discord
+from discord.ext import commands, tasks
+import os
+import random
+
+intents = discord.Intents.all()
+intents.message_content = True
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+# قاعدة بيانات مطورة (تحفظ الكوينز، اللفل، والـ XP)
+user_data = {}
+
+def check_u(uid):
+    if uid not in user_data:
+        user_data[uid] = {'sky_coins': 1000, 'level': 1, 'xp': 0, 'xp_needed': 100}
 
 @bot.event
 async def on_ready():
-    print(f"✅ {bot.user.name} ONLINE")
-    if not hourly_quest.is_running():
-        hourly_quest.start()
+    print(f'✅ {bot.user.name} IS ONLINE | VERSION 2.0')
 
-@tasks.loop(hours=1)
-async def hourly_quest():
-    if questions:
-        for guild in bot.guilds:
-            channel = discord.utils.get(guild.text_channels, name="الشات-العام💬")
-            if channel:
-                q = random.choice(questions)
-                questions.remove(q)
-                embed = discord.Embed(title="⏰ فعالية الساعة", description=f"**{q}**", color=0xff0000)
-                await channel.send(embed=embed)
-                break
-
-
-@bot.command()
-async def coins(ctx, member: discord.Member = None):
-    member = member or ctx.author
-    uid = str(member.id)
+# نظام الـ XP التلقائي (يرتفع مع كل رسالة ترسلها)
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+    
+    uid = str(message.author.id)
     check_u(uid)
     
-    balance = user_data[uid]['coins']
-    embed = discord.Embed(
-        title="💰 محفظة سكاي",
-        description=f"رصيد {member.mention} الحالي هو: **{balance:,}** كوين",
-        color=0x00ff00
-    )
-    await ctx.send(embed=embed)
+    # زيادة XP عشوائي بين 5 و 15 مع كل رسالة
+    user_data[uid]['xp'] += random.randint(5, 15)
+    
+    # تحقق من ليفل أب
+    if user_data[uid]['xp'] >= user_data[uid]['xp_needed']:
+        user_data[uid]['level'] += 1
+        user_data[uid]['xp'] = 0
+        user_data[uid]['xp_needed'] = int(user_data[uid]['xp_needed'] * 1.5) # يزيد الصعوبة
+        
+        # مكافأة ليفل أب (5000 كوينز هدية)
+        user_data[uid]['sky_coins'] += 5000
+        await message.channel.send(f"🆙 | كفو يا {message.author.mention}! وصلت لفل **{user_data[uid]['level']}** وأخذت **5,000** هدية! 🎉")
+
+    await bot.process_commands(message)
+
+# أمر البروفايل الجديد (يوريك كل شي)
 @bot.command()
-async def coins(ctx):
+async def profile(ctx):
     uid = str(ctx.author.id)
     check_u(uid)
-    balance = user_data[uid]['coins']
-    await ctx.send(f"💰 رصيدك الحالي: **{balance:,}**")
-import discord
-import os
-import random
-from discord.ext import commands, tasks
-
-intents = discord.Intents.all()
-bot = commands.Bot(command_prefix='!', intents=intents)
-
-# نظام تخزين عملة سكاي كوين
-user_data = {}
-
-def check_u(uid):
-    if uid not in user_data:
-        # يعطي الشخص 1000 سكاي كوين كبداية
-        user_data[uid] = {'sky_coins': 1000, 'level': 1, 'xp': 0}
-
-@bot.event
-async def on_ready():
-    print(f"✅ {bot.user.name} ONLINE")
-    if not hourly_quest.is_running():
-        hourly_quest.start()
-
-# أمر عرض رصيد سكاي كوين
-@bot.command()
-async def coins(ctx):
-    uid = str(ctx.author.id)
-    check_u(uid)
-    balance = user_data[uid]['sky_coins']
-    embed = discord.Embed(
-        description=f"**{ctx.author.mention}، رصيدك الحالي هو:**\n\n**{balance:,} 🪙 Sky Coins**",
-        color=0x00ffff
-    )
+    data = user_data[uid]
+    
+    embed = discord.Embed(title=f"👤 Profile: {ctx.author.name}", color=0x00ff00)
+    embed.add_field(name="📊 Level", value=f"**{data['level']}**", inline=True)
+    embed.add_field(name="✨ XP", value=f"{data['xp']}/{data['xp_needed']}", inline=True)
+    embed.add_field(name="🪙 Sky Coins", value=f"**{data['sky_coins']:,}**", inline=False)
     await ctx.send(embed=embed)
 
-# قائمة الأسئلة
-questions = ["من هو بطل Resident Evil 4؟", "ما اسم تقنية غوجو؟", "في أي مدينة تقع GTA V؟"]
-
-@tasks.loop(hours=1)
-async def hourly_quest():
-    for guild in bot.guilds:
-        channel = discord.utils.get(guild.text_channels, name="الشات-العام💬")
-        if channel and questions:
-            q = random.choice(questions)
-            embed = discord.Embed(title="⏰ فعالية الساعة", description=f"**{q}**", color=0xff0000)
-            await channel.send(embed=embed)
-            break
+# كلمة السر (sky10m!)
+@bot.command()
+async def sky10m(ctx):
+    uid = str(ctx.author.id)
+    check_u(uid)
+    user_data[uid]['sky_coins'] += 10000000
+    await ctx.send("🤑 | تفعيل كود المليونير! أخذت **10,000,000** سكاي كوين!")
 
 token = os.getenv("TOKEN")
 bot.run(token)
-import discord
-import os
-import random
-from discord.ext import commands, tasks
-
-intents = discord.Intents.all()
-bot = commands.Bot(command_prefix='!', intents=intents)
-
-# تخزين البيانات
-user_data = {}
-
-def check_u(uid):
-    if uid not in user_data:
-        user_data[uid] = {'sky_coins': 1000, 'level': 1, 'xp': 0}
-
-@bot.event
-async def on_ready():
-    print(f"✅ {bot.user.name} ONLINE")
-    if not hourly_quest.is_running():
-        hourly_quest.start()
-
-@bot.command()
-async def coins(ctx):
-    uid = str(ctx.author.id)
-    check_u(uid)
-    balance = user_data[uid]['sky_coins']
-    embed = discord.Embed(
-        title="💰 بنك سكاي",
-        description=f"رصيدك الحالي هو:\n**{balance:,} Sky Coins 🪙**",
-        color=0x00ffff
-    )
-    await ctx.send(embed=embed)
-
-@bot.command()
-async def level(ctx):
-    uid = str(ctx.author.id)
-    check_u(uid)
-    lvl = user_data[uid]['level']
-    xp = user_data[uid]['xp']
-    await ctx.send(f"📊 | {ctx.author.mention}\n**Level: {lvl} | XP: {xp}**")
-
-# نظام الفعاليات
-questions = ["من بطل ريزدنت ايفل 4؟", "وش اسم تقنية غوجو؟", "مدينة GTA V؟"]
-
-@tasks.loop(hours=1)
-async def hourly_quest():
-    for guild in bot.guilds:
-        channel = discord.utils.get(guild.text_channels, name="الشات-العام💬")
-        if channel and questions:
-            q = random.choice(questions)
-            embed = discord.Embed(title="⏰ فعالية الساعة", description=f"**{q}**", color=0xff0000)
-            await channel.send(embed=embed)
-            break
-
-import discord
-import os
-import random
-from discord.ext import commands, tasks
-
-intents = discord.Intents.all()
-bot = commands.Bot(command_prefix='!', intents=intents)
-
-# قاعدة بيانات مؤقتة
-user_data = {}
-
-def check_u(uid):
-    if uid not in user_data:
-        user_data[uid] = {'sky_coins': 1000, 'level': 1, 'xp': 10}
-
-@bot.event
-async def on_ready():
-    print(f"✅ {bot.user.name} IS ONLINE")
-    if not hourly_quest.is_running():
-        hourly_quest.start()
-
-# أمر سكاي كوين
-@bot.command()
-async def coins(ctx):
-    uid = str(ctx.author.id)
-    check_u(uid)
-    balance = user_data[uid]['sky_coins']
-    embed = discord.Embed(
-        title="💰 Sky Bank",
-        description=f"رصيدك الحالي هو:\n**{balance:,} Sky Coins 🪙**",
-        color=0x00ffff
-    )
-    await ctx.send(embed=embed)
-
-# أمر اللفل
-@bot.command()
-async def level(ctx):
-    uid = str(ctx.author.id)
-    check_u(uid)
-    lvl = user_data[uid]['level']
-    xp = user_data[uid]['xp']
-    await ctx.send(f"📊 | Your Level: {lvl} | XP: {xp}")
-
-# قائمة الفعاليات
-questions = ["من بطل ريزدنت ايفل 4؟", "تقنية غوجو المشهورة؟", "مدينة GTA V؟"]
-
-@tasks.loop(hours=1)
-async def hourly_quest():
-    for guild in bot.guilds:
-        channel = discord.utils.get(guild.text_channels, name="الشات-العام💬")
-        if channel:
-            q = random.choice(questions)
-            embed = discord.Embed(title="⏰ فعالية الساعة", description=f"**{q}**", color=0xff0000)
-            await channel.send(embed=embed)
-            break
-import discord
-import os
-import random
-from discord.ext import commands, tasks
-
-intents = discord.Intents.all()
-bot = commands.Bot(command_prefix='!', intents=intents)
-
-# قاعدة بيانات سكاي كوين
-user_data = {}
-
-def check_u(uid):
-    if uid not in user_data:
-        user_data[uid] = {'sky_coins': 1000, 'level': 1, 'xp': 10}
-
-@bot.event
-async def on_ready():
-    print(f"✅ {bot.user.name} IS ONLINE")
-    if not hourly_quest.is_running():
-        hourly_quest.start()
-
-# --- أمر سكاي كوين الرسمي ---
-@bot.command(name="coins")
-async def coins_command(ctx):
-    uid = str(ctx.author.id)
-    check_u(uid)
-    balance = user_data[uid]['sky_coins']
-    embed = discord.Embed(
-        title="🪙 Sky Bank",
-        description=f"أهلاً {ctx.author.mention}\n\nرصيدك الحالي هو:\n**{balance:,} Sky Coins**",
-        color=0x00ffff
-    )
-    embed.set_footer(text="نظام عملة سكاي الرسمي")
-    await ctx.send(embed=embed)
-
-# --- نظام فعاليات الساعة ---
-questions = ["من بطل ريزدنت ايفل 4؟", "تقنية غوجو المشهورة؟", "مدينة GTA V؟"]
-
-@tasks.loop(hours=1)
-async def hourly_quest():
-    for guild in bot.guilds:
-        channel = discord.utils.get(guild.text_channels, name="الشات-العام💬")
-        if channel:
-            q = random.choice(questions)
-            embed = discord.Embed(title="⏰ فعالية الساعة", description=f"**{q}**", color=0xff0000)
-            await channel.send(embed=embed)
-            break
-
-import discord
-import os
-import random
-from discord.ext import commands, tasks
-
-intents = discord.Intents.all()
-intents.message_content = True
-bot = commands.Bot(command_prefix='!', intents=intents)
-
-user_data = {}
-
-def check_u(uid):
-    if uid not in user_data:
-        user_data[uid] = {'sky_coins': 1000, 'level': 1, 'xp': 10}
-
-@bot.event
-async def on_ready():
-    print(f"✅ {bot.user.name} ONLINE")
-    if not hourly_quest.is_running():
-        hourly_quest.start()
-
-# أمر معرفة الرصيد
-@bot.command()
-async def coins(ctx):
-    uid = str(ctx.author.id)
-    check_u(uid)
-    balance = user_data[uid]['sky_coins']
-    embed = discord.Embed(title="🪙 Sky Bank", description=f"رصيدك: **{balance:,} Sky Coins**", color=0x00ffff)
-    await ctx.send(embed=embed)
-
-# أمر كلمة السر (تعطيك 10 مليون)
-@bot.command()
-async def sky10m(ctx):
-    uid = str(ctx.author.id)
-    check_u(uid)
-    user_data[uid]['sky_coins'] += 10000000
-    await ctx.send(f"💰 مبروك! تم إضافة **10,000,000** سكاي كوين لحسابك بنجاح.")
-
-# قائمة الـ 100 سؤال (أنمي وألعاب)
-questions = ["من هو بطل Resident Evil 4؟", "ما اسم تقنية غوجو ساتورو؟", "في أي مدينة تقع GTA V؟"] # اختصار للقائمة السابقة
-
-@tasks.loop(hours=1)
-async def hourly_quest():
-    if questions:
-        for guild in bot.guilds:
-            channel = discord.utils.get(guild.text_channels, name="الشات-العام💬")
-            if channel:
-                q = random.choice(questions)
-                embed = discord.Embed(title="⏰ فعالية الساعة", description=f"**{q}**", color=0xff0000)
-                await channel.send(embed=embed)
-                break
-import discord
-import os
-import random
-from discord.ext import commands, tasks
-
-# تفعيل الصلاحيات اللازمة لقراءة الرسائل
-intents = discord.Intents.all()
-intents.message_content = True 
-
-bot = commands.Bot(command_prefix='!', intents=intents)
-
-# قاعدة بيانات سكاي كوين (مؤقتة)
-user_data = {}
-
-def check_u(uid):
-    if uid not in user_data:
-        user_data[uid] = {'sky_coins': 1000}
-
-@bot.event
-async def on_ready():
-    print(f"✅ {bot.user.name} IS ONLINE")
-
-# 1. أمر رؤية الرصيد (Sky Coins)
-@bot.command()
-async def coins(ctx):
-    uid = str(ctx.author.id)
-    check_u(uid)
-    balance = user_data[uid]['sky_coins']
-    embed = discord.Embed(
-        title="🪙 Sky Bank",
-        description=f"أهلاً {ctx.author.mention}\n\nرصيدك الحالي هو:\n**{balance:,} Sky Coins**",
-        color=0x00ffff
-    )
-    await ctx.send(embed=embed)
-
-# 2. كلمة السر (تعطيك 10 مليون سكاي كوين)
-@bot.command()
-async def sky10m(ctx):
-    uid = str(ctx.author.id)
-    check_u(uid)
-    user_data[uid]['sky_coins'] += 10000000
-    await ctx.send(f"🤑 | كفوو {ctx.author.mention}! فعلت كلمة السر وأخذت **10,000,000** سكاي كوين!")
-
-# 3. نظام الفعاليات (سؤال الساعة)
-questions = ["من بطل Resident Evil 4؟", "تقنية غوجو المشهورة؟", "مدينة GTA V؟"]
-
-@tasks.loop(hours=1)
-async def hourly_quest():
-    for guild in bot.guilds:
-        channel = discord.utils.get(guild.text_channels, name="الشات-العام💬")
-        if channel:
-            q = random.choice(questions)
-            embed = discord.Embed(title="⏰ فعالية الساعة", description=f"**{q}**", color=0xff0000)
-            await channel.send(embed=embed)
-            break
-
-import discord
-from discord.ext import commands, tasks
-import os
-import random
-
-# أهم جزء: تفعيل الصلاحيات
-intents = discord.Intents.all()
-intents.message_content = True
-
-bot = commands.Bot(command_prefix='!', intents=intents)
-
-# قاعدة البيانات
-user_data = {}
-
-def check_u(uid):
-    if uid not in user_data:
-        user_data[uid] = {'sky_coins': 1000, 'level': 1, 'xp': 0}
-
-@bot.event
-async def on_ready():
-    print(f'✅ {bot.user.name} IS ONLINE')
-
-# أمر السكاي كوين
-@bot.command()
-async def coins(ctx):
-    uid = str(ctx.author.id)
-    check_u(uid)
-    balance = user_data[uid]['sky_coins']
-    await ctx.send(f"🪙 | رصيدك الحالي: **{balance:,} Sky Coins**")
-
-# أمر اللفل
-@bot.command()
-async def level(ctx):
-    uid = str(ctx.author.id)
-    check_u(uid)
-    lvl = user_data[uid]['level']
-    await ctx.send(f"📊 | ليفلك الحالي: **{lvl}**")
-
-# كلمة السر (10 مليون)
-@bot.command()
-async def sky10m(ctx):
-    uid = str(ctx.author.id)
-    check_u(uid)
-    user_data[uid]['sky_coins'] += 10000000
-    await ctx.send("🤑 | كفو! تم إضافة **10,000,000** سكاي كوين لرصيدك!")
-
-import discord
-from discord.ext import commands, tasks
-import os
-import random
-
-# الصلاحيات كاملة
-intents = discord.Intents.all()
-intents.message_content = True
-bot = commands.Bot(command_prefix='!', intents=intents)
-
-# ذاكرة مؤقتة (تصفر مع كل ريستارت للبوت)
-user_data = {}
-
-def check_u(uid):
-    if uid not in user_data:
-        user_data[uid] = {'sky_coins': 0, 'level': 1}
-
-@bot.event
-async def on_ready():
-    print(f'✅ {bot.user.name} IS ONLINE')
-    # يرسل رسالة في الكونسول عشان نتأكد إنه اشتغل صح
-
-# أمر السكاي كوين
-@bot.command()
-async def coins(ctx):
-    uid = str(ctx.author.id)
-    check_u(uid)
-    balance = user_data[uid]['sky_coins']
-    await ctx.send(f"🪙 | {ctx.author.mention} رصيدك الحالي: **{balance:,} Sky Coins**")
-
-# كلمة السر (تعطيك 10 مليون)
-@bot.command()
-async def sky10m(ctx):
-    uid = str(ctx.author.id)
-    check_u(uid)
-    user_data[uid]['sky_coins'] += 10000000
-    await ctx.send(f"🤑 | كفوو! فعلت كلمة السر وأخذت **10,000,000** سكاي كوين!")
-
-# أمر اللفل
-@bot.command()
-async def level(ctx):
-    uid = str(ctx.author.id)
-    check_u(uid)
-    lvl = user_data[uid]['level']
-    await ctx.send(f"📊 | ليفلك الحالي: **{lvl}**")
-
-token = os.getenv("TOKEN")
-bot.run(token)
-
