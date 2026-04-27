@@ -342,15 +342,7 @@ async def hourly_quest():
                 await channel.send(embed=embed)
                 break
 
-token = os.getenv("TOKEN")
-bot.run(token)
-import discord
-import os
-import random
-from discord.ext import commands, tasks
-
-intents = discord.Intents.all()
-bot = commands.Bot(command_prefix='!', intents=intents)
+)
 
 # قائمة 100 سؤال (أنمي وألعاب)
 questions = [
@@ -412,8 +404,17 @@ import random
 intents = discord.Intents.all()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
+import discord
+from discord.ext import commands, tasks
+import os
+import random
 
-# قاعدة بيانات مطورة (تحفظ الكوينز، اللفل، والـ XP)
+# تفعيل الصلاحيات
+intents = discord.Intents.all()
+intents.message_content = True
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+# قاعدة بيانات سكاي (تتصفر مع كل ريستارت)
 user_data = {}
 
 def check_u(uid):
@@ -422,9 +423,9 @@ def check_u(uid):
 
 @bot.event
 async def on_ready():
-    print(f'✅ {bot.user.name} IS ONLINE | VERSION 2.0')
+    print(f'✅ {bot.user.name} IS ONLINE | No More Crashes')
 
-# نظام الـ XP التلقائي (يرتفع مع كل رسالة ترسلها)
+# نظام الـ XP التلقائي عند الكلام
 @bot.event
 async def on_message(message):
     if message.author.bot:
@@ -433,35 +434,34 @@ async def on_message(message):
     uid = str(message.author.id)
     check_u(uid)
     
-    # زيادة XP عشوائي بين 5 و 15 مع كل رسالة
+    # زيادة XP عشوائي
     user_data[uid]['xp'] += random.randint(5, 15)
     
-    # تحقق من ليفل أب
+    # ليفل أب
     if user_data[uid]['xp'] >= user_data[uid]['xp_needed']:
         user_data[uid]['level'] += 1
         user_data[uid]['xp'] = 0
-        user_data[uid]['xp_needed'] = int(user_data[uid]['xp_needed'] * 1.5) # يزيد الصعوبة
-        
-        # مكافأة ليفل أب (5000 كوينز هدية)
+        user_data[uid]['xp_needed'] = int(user_data[uid]['xp_needed'] * 1.5)
         user_data[uid]['sky_coins'] += 5000
-        await message.channel.send(f"🆙 | كفو يا {message.author.mention}! وصلت لفل **{user_data[uid]['level']}** وأخذت **5,000** هدية! 🎉")
+        await message.channel.send(f"🆙 | كفو {message.author.mention}! وصلت لفل **{user_data[uid]['level']}** وأخذت **5,000** كوينز هدية!")
 
     await bot.process_commands(message)
 
-# أمر البروفايل الجديد (يوريك كل شي)
+# أمر البروفايل الجديد (بدل ليفل القديم)
 @bot.command()
 async def profile(ctx):
     uid = str(ctx.author.id)
     check_u(uid)
     data = user_data[uid]
     
-    embed = discord.Embed(title=f"👤 Profile: {ctx.author.name}", color=0x00ff00)
-    embed.add_field(name="📊 Level", value=f"**{data['level']}**", inline=True)
-    embed.add_field(name="✨ XP", value=f"{data['xp']}/{data['xp_needed']}", inline=True)
-    embed.add_field(name="🪙 Sky Coins", value=f"**{data['sky_coins']:,}**", inline=False)
+    embed = discord.Embed(title=f"👤 بروفايل: {ctx.author.name}", color=0x00ff00)
+    embed.add_field(name="📊 المستوى", value=f"**{data['level']}**", inline=True)
+    embed.add_field(name="✨ الخبرة (XP)", value=f"{data['xp']}/{data['xp_needed']}", inline=True)
+    embed.add_field(name="🪙 سكاي كوينز", value=f"**{data['sky_coins']:,}**", inline=False)
+    embed.set_thumbnail(url=ctx.author.avatar.url if ctx.author.avatar else None)
     await ctx.send(embed=embed)
 
-# كلمة السر (sky10m!)
+# كلمة السر (10 مليون)
 @bot.command()
 async def sky10m(ctx):
     uid = str(ctx.author.id)
