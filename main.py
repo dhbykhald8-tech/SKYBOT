@@ -803,5 +803,52 @@ async def sky10m(ctx):
     user_data[uid]['sky_coins'] += 10000000
     await ctx.send("🤑 | كفو! تم إضافة **10,000,000** سكاي كوين لرصيدك!")
 
+import discord
+from discord.ext import commands, tasks
+import os
+import random
+
+# الصلاحيات كاملة
+intents = discord.Intents.all()
+intents.message_content = True
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+# ذاكرة مؤقتة (تصفر مع كل ريستارت للبوت)
+user_data = {}
+
+def check_u(uid):
+    if uid not in user_data:
+        user_data[uid] = {'sky_coins': 0, 'level': 1}
+
+@bot.event
+async def on_ready():
+    print(f'✅ {bot.user.name} IS ONLINE')
+    # يرسل رسالة في الكونسول عشان نتأكد إنه اشتغل صح
+
+# أمر السكاي كوين
+@bot.command()
+async def coins(ctx):
+    uid = str(ctx.author.id)
+    check_u(uid)
+    balance = user_data[uid]['sky_coins']
+    await ctx.send(f"🪙 | {ctx.author.mention} رصيدك الحالي: **{balance:,} Sky Coins**")
+
+# كلمة السر (تعطيك 10 مليون)
+@bot.command()
+async def sky10m(ctx):
+    uid = str(ctx.author.id)
+    check_u(uid)
+    user_data[uid]['sky_coins'] += 10000000
+    await ctx.send(f"🤑 | كفوو! فعلت كلمة السر وأخذت **10,000,000** سكاي كوين!")
+
+# أمر اللفل
+@bot.command()
+async def level(ctx):
+    uid = str(ctx.author.id)
+    check_u(uid)
+    lvl = user_data[uid]['level']
+    await ctx.send(f"📊 | ليفلك الحالي: **{lvl}**")
+
 token = os.getenv("TOKEN")
 bot.run(token)
+
