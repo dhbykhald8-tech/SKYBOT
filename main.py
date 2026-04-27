@@ -308,83 +308,80 @@ async def marry(ctx, member: discord.Member = None):
             if interaction.user.id != member.id:
                 return await interaction.response.send_message("الطلب مو لك!", ephemeral=True)
             await interaction.response.edit_message(content=f"💔 {member.mention} رفض طلب الزواج.. خيرها بغيرها!", embed=None, view=None)
-# --- سطر 311: أوامر السيرفر ونظام الجوائز ---
+# --- من سطر 311 لنهاية الملف ---
+
+class MarryView(discord.ui.View):
+    def __init__(self, author, target):
+        super().__init__(timeout=60)
+        self.author = author
+        self.target = target
+
+    @discord.ui.button(label="قبول ✅", style=discord.ButtonStyle.green)
+    async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.target.id:
+            return await interaction.response.send_message("❌ هذا الطلب مو لك!", ephemeral=True)
+        
+        data = load_data()
+        u_id, t_id = str(self.author.id), str(self.target.id)
+        
+        # تنفيذ الزواج في الداتا
+        data["users"][u_id]["married_to"] = t_id
+        data["users"][t_id]["married_to"] = u_id
+        data["users"][u_id]["balance"] -= 20000 # خصم المهر
+        save_data(data)
+        
+        await interaction.response.edit_message(content=f"💖 مبروك! تم الزواج بين {self.author.mention} و {self.target.mention}! 💍", view=None)
+
+    @discord.ui.button(label="رفض ❌", style=discord.ButtonStyle.red)
+    async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.target.id:
+            return await interaction.response.send_message("❌ مو أنت المقصود!", ephemeral=True)
+        await interaction.response.edit_message(content=f"💔 {self.target.mention} رفض طلب الزواج.. خيرها بغيرها!", view=None)
+
+@bot.command(name="marry")
+async def marry(ctx, member: discord.Member):
+    if member == ctx.author: return await ctx.reply("ما يصير تتزوج نفسك 😂")
+    
+    data = load_data()
+    u_id = str(ctx.author.id)
+    balance = data.get("users", {}).get(u_id, {}).get("balance", 0)
+
+    if balance < 20000:
+        await ctx.reply(f"❌ المهر 20,000 وأنت رصيدك {balance:,}")
+        return
+
+    view = MarryView(ctx.author, member)
+    await ctx.send(f"💍 {ctx.author.mention} يطلب الزواج من {member.mention}!\nهل تقبلين؟", view=view)
 
 @bot.command(name="انفصال")
 async def divorce(ctx):
     data = load_data()
     u_id = str(ctx.author.id)
-    if u_id not in data["users"] or not data["users"][u_id].get("married_to"):
-        await ctx.reply("❌ أنت عزوبي أصلاً، من منو تبي تنفصل؟ 😂")
-        return
-    partner_id = data["users"][u_id]["married_to"]
-    data["users"][u_id]["married_to"] = None
-    if partner_id in data["users"]:
-        data["users"][partner_id]["married_to"] = None
-    save_data(data)
-    await ctx.reply(f"💔 تم الانفصال بنجاح.. {ctx.author.mention} صار عزوبي! 😂")
+    if u_id in data["users"] and data["users"][u_id].get("married_to"):
+        partner_id = data["users"][u_id]["married_to"]
+        data["users"][u_id]["married_to"] = None
+        if partner_id in data["users"]: data["users"][partner_id]["married_to"] = None
+        save_data(data)
+        await ctx.reply("💔 تم الانفصال.. صرت عزوبي!")
+    else:
+        await ctx.reply("أنت مو متزوج أصلاً!")
 
-questions_list = [
-    "ما هي عاصمة الكويت؟",
-    "من هو بطل أنمي ون بيس؟",
-    "كم عدد قارات العالم؟",
-    "ما هو أسرع حيوان بري؟",
-    "من هو مؤلف جوجوتسو كايسن؟",
-    "ما هو بطل Resident Evil 4؟"
-]
-asked_questions = []
+# --- نظام الجوائز ---
+questions_list = ["من هو بطل Resident Evil 4؟"]
 last_question = None
 
 @bot.event
 async def on_message(message):
     global last_question
-    if message.author == bot.user:
-        return
-    
-    answers = {
-        "ما هي عاصمة الكويت؟": "الكويت",
-        "من هو بطل أنمي ون بيس؟": "لوفي",
-        "كم عدد قارات العالم؟": "7",
-        "ما هو أسرع حيوان بري؟": "الفهد",
-        "من هو مؤلف جوجوتسو كايسن؟": "أكوتامي",
-        "ما هو بطل Resident Evil 4؟": "ليون"
-    }
-
-    if last_question in answers:
-        if message.content.strip() == answers[last_question]:
-            data = load_data()
-            u_id = str(message.author.id)
-            if u_id not in data["users"]:
-                data["users"][u_id] = {"balance": 0, "married_to": None}
-            data["users"][u_id]["balance"] += 2000
-            save_data(data)
-            await message.reply(f"✅ كفو يا **{message.author.display_name}**! فزت بـ **2000 كوينز** 💰")
-            last_question = None
-            return
-
+    if message.author == bot.user: return
+    if last_question == "من هو بطل Resident Evil 4؟" and message.content == "ليون":
+        # كود إضافة الجائزة هنا
+        pass
     await bot.process_commands(message)
-
-@tasks.loop(hours=1)
-async def auto_question_task():
-    global asked_questions, last_question
-    target_channel = discord.utils.get(bot.get_all_channels(), name="الشات-العام💬")
-    if target_channel:
-        if len(asked_questions) >= len(questions_list):
-            asked_questions = []
-        available = [q for q in questions_list if q not in asked_questions]
-        if available:
-            question = random.choice(available)
-            asked_questions.append(question)
-            last_question = question
-            embed = discord.Embed(title="❓ سؤال الساعة", description=f"**{question}**", color=0xFFD700)
-            await target_channel.send(embed=embed)
 
 @bot.event
 async def on_ready():
-    print(f"✅ تم تشغيل {bot.user} بنجاح!")
-    if not auto_question_task.is_running():
-        auto_question_task.start()
+    print(f"✅ {bot.user} شغال!")
 
 token = os.getenv("TOKEN")
-if token:
-    bot.run(token)
+bot.run(token)
