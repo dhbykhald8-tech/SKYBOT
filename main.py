@@ -124,10 +124,6 @@ async def on_ready():
     hourly_event.start()
     print("SKY BOT READY")
 import discord
-from discord.ext import commands
-
-intents = discord.Intents.all()
-import discord
 import os
 from discord.ext import commands
 
@@ -136,8 +132,22 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 @bot.event
 async def on_ready():
-    print(f"✅ {bot.user.name} IS ONLINE!")
+    print(f"✅ {bot.user.name} ONLINE")
 
-# الكود الحين راح يسحب التوكن من الـ Variables اللي صورتها
+# أمر قائمة الألعاب
+@bot.command()
+async def games(ctx):
+    embed = discord.Embed(
+        title="🎮 قائمة ألعاب سكاي",
+        description="هذه هي الألعاب المتوفرة حالياً:",
+        color=0x00ffff
+    )
+    embed.add_field(name="🎰 ألعاب الحظ", value="`roulette` `slots` `dice` `flip`", inline=False)
+    embed.add_field(name="🧠 ألعاب الذكاء", value="`math` `guess` `capitals` `fast`", inline=False)
+    embed.add_field(name="⚔️ ألعاب التحدي", value="`war` `arena` `mafia` `hunt`", inline=False)
+    embed.set_footer(text="استخدم ! قبل اسم اللعبة للبدء")
+    await ctx.send(embed=embed)
+
+# سحب التوكن من Variables
 token = os.getenv("TOKEN")
 bot.run(token)
