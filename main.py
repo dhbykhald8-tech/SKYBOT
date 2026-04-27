@@ -316,25 +316,6 @@ questions = {
     "من هو الوميض الأصفر في ناروتو؟": "ميناتو"
 }
 
-def update_data_with_xp(u_id, xp_gain, coin_gain=0):
-    data = load_data()
-    uid = str(u_id)
-    if uid not in data["users"]:
-        data["users"][uid] = {"balance": 0, "married_to": None, "xp": 0, "level": 1}
-    
-    user = data["users"][uid]
-    user["xp"] = user.get("xp", 0) + xp_gain
-    user["balance"] = user.get("balance", 0) + coin_gain
-    
-    leveled_up = False
-    if user.get("xp", 0) >= 100:
-        user["xp"] -= 100
-        user["level"] = user.get("level", 1) + 1
-        leveled_up = True
-    
-    save_data(data)
-    return leveled_up, user["level"]
-
 @bot.event
 async def on_message(message):
     if message.author == bot.user: return
