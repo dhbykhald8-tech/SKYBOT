@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 from discord.ui import Button, View
-from easy_pil import Editor, load_image_async, Font
 import os
 import random
 import asyncio
@@ -12,82 +11,98 @@ intents.members = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-user_xp = {}
+# قفل الرتبة (تأكد إن اسم الرتبة صح عندك)
 REQUIRED_ROLE_NAME = "فعاليات"
+# اسم القناة اللي بيرسل فيها ترحيب عادي
 WELCOME_CHANNEL_NAME = "ترحيب"
+
+# نظام النقاط (في الذاكرة)
+user_xp = {}
 
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user}')
 
+# --- ترحيب كتابي فقط (بدون صور) ---
 @bot.event
 async def on_member_join(member):
+    # البحث عن القناة
     channel = discord.utils.get(member.guild.text_channels, name=WELCOME_CHANNEL_NAME)
     if channel:
-        try:
-            # صورة سماء وسحاب فخمة للبنر
-            bg_url = "https://wallpaperaccess.com/full/175910.jpg"
-            background = Editor(await load_image_async(bg_url)).resize((800, 450))
-            
-            # صورة بروفايل الشخص
-            avatar_image = await load_image_async(member.display_avatar.url)
-            avatar = Editor(avatar_image).resize((200, 200)).circle_clip()
-            
-            # وضع الصورة في المنتصف
-            background.paste(avatar, (300, 80))
-            
-            # إضافة النصوص
-            font_big = Font.poppins(size=50, variant="bold")
-            font_small = Font.poppins(size=35, variant="regular")
-            
-            background.text((400, 300), "WELCOME", color="white", font=font_big, align="center")
-            background.text((400, 370), f"{member.name}", color="white", font=font_small, align="center")
-            
-            file = discord.File(fp=background.image_bytes, filename="welcome.png")
-            await channel.send(f"منور السيرفر يا {member.mention}! ☁️✨", file=file)
-        except Exception as e:
-            print(f"Image Error: {e}")
-            await channel.send(f"منور السيرفر يا {member.mention}!")
+        await channel.send(f"حياك الله يا {member.mention} نورتنا! منور السيرفر يا بطل! ✨☁️")
 
+# --- نظام اللفل والفعاليات ---
 @bot.event
 async def on_message(message):
     if message.author.bot: return
+    
+    # زيادة XP عند كل رسالة
     uid = str(message.author.id)
     if uid not in user_xp: user_xp[uid] = {'xp': 0, 'level': 1}
     user_xp[uid]['xp'] += 10
+    
+    # فحص إذا ارتفع اللفل
     if user_xp[uid]['xp'] >= (user_xp[uid]['level'] * 100):
         user_xp[uid]['level'] += 1
-        await message.channel.send(f"🆙 كفو {message.author.mention}! وصلت لفل {user_xp[uid]['level']}!")
+        await message.channel.send(f"🆙 كفو يا {message.author.mention}! ارتفع ليفلك وصار **{user_xp[uid]['level']}**!")
 
+    # عرض قائمة الألعاب (قفل الرتبة)
     if message.content == '-games':
-        if not any(role.name == REQUIRED_ROLE_NAME for role in message.author.roles):
-            await message.channel.send(f"❌ لازم رتبة **({REQUIRED_ROLE_NAME})**")
+        has_role = any(role.name == REQUIRED_ROLE_NAME for role in message.author.roles)
+        if not has_role:
+            await message.channel.send(f"❌ عفواً {message.author.mention}، لازم رتبة **({REQUIRED_ROLE_NAME})** عشان تلعب!")
             return
-        await message.channel.send("🎮 **الألعاب:**\n`!level` | `!slots` | `!fast` | `!roll` | `!flip` | `!ball` | `!roulette`")
+            
+        help_text = (
+            "🎮 **قائمة ألعاب سكاي بوت المتاحة للرتبة:**\n"
+            "`!level` - لفلُك ونقاطك\n"
+            "`!slots` - آلة الحظ (فواكه)\n"
+            "`!fast` - تحدي الكتابة\n"
+            "`!roll` - ارمِ النرد\n"
+            "`!flip` - ملك أو كتابة\n"
+            "`!ball` - الكرة السحرية"
+        )
+        await message.channel.send(help_text)
+    
     await bot.process_commands(message)
 
-# --- تصحيح الأوامر عشان ما يكرش البوت ---
+# --- أوامر الألعاب بالردود العربية ---
+
 @bot.command()
 async def level(ctx):
-    d = user_xp.get(str(ctx.author.id), {'level': 1, 'xp': 0})
-    await ctx.send(f"مستواك: {d['level']} | نقاطك: {d['xp']} XP")
+    uid = str(ctx.author.id)
+    d = user_xp.get(uid, {'level': 1, 'xp': 0})
+    await ctx.send(f"مستواك: **{d['level']}** | نقاطك: **{d['xp']} XP**")
 
 @bot.command()
 async def flip(ctx):
-    await ctx.send(f"🪙 النتيجة: **{random.choice(['وجه (ملك)', 'كتابة'])}**")
+    res = random.choice(['وجه (ملك)', 'كتابة'])
+    await ctx.send(f"🪙 النتيجة: **{res}**")
 
 @bot.command()
 async def slots(ctx):
-    res = [random.choice("🍎🍊🍇💎⭐") for _ in range(3)]
-    msg = "🎉 فوز!" if len(set(res))==1 else "✨ حبتين!" if len(set(res))==2 else "❌ خسارة"
-    await ctx.send(f"**[ {' | '.join(res)} ]**\n{msg}")
+    icons = "🍎🍊🍇💎⭐"
+    res = [random.choice(icons) for _ in range(3)]
+    result_text = "🎉 مبروك! فوز!" if len(set(res))==1 else "✨ كفو! حبتين!" if len(set(res))==2 else "❌ خسارة"
+    await ctx.send(f"**[ {' | '.join(res)} ]**\n{result_text}")
 
 @bot.command()
-async def roll(ctx): await ctx.send(f"🎲: {random.randint(1, 6)}")
+async def fast(ctx):
+    words = ["كويت", "برمجة", "سكاي", "سرعة", "طور"]
+    t = random.choice(words)
+    await ctx.send(f"اكتب بسرعة الكلمة هذي: **{t}**")
+    try:
+        await bot.wait_for('message', check=lambda m: m.author==ctx.author and m.content==t, timeout=8)
+        await ctx.send("⚡ وحش! كتبتها بالوقت!")
+    except: await ctx.send(f"⌛ وقت، كانت الكلمة: {t}")
 
-@bot.command(name="ball") # غيرنا الاسم من 8ball لـ ball عشان ما يكرش
+@bot.command()
+async def roll(ctx): await ctx.send(f"🎲 الرقم هو: **{random.randint(1, 6)}**")
+
+@bot.command(name="ball")
 async def ball(ctx):
-    await ctx.send(f"🔮: {random.choice(['نعم', 'لا', 'ممكن جداً'])}")
+    ans = ["نعم", "لا", "ممكن", "اسأل لاحقاً"]
+    await ctx.send(f"🔮 الكرة تقول: **{random.choice(ans)}**")
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
