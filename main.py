@@ -462,26 +462,6 @@ async def on_message(message):
     await bot.process_commands(message)
 @bot.command(name="profile")
 async def profile(ctx, member: discord.Member = None):
-    # إذا ما منشنت أحد، بيطلع بروفايلك أنت
-    member = member or ctx.author
-    data = load_data()
-    u_id = str(member.id)
-    
-    # جلب البيانات (ووضع قيم افتراضية إذا العضو جديد)
-    user_data = data["users"].get(u_id, {"balance": 0, "level": 1, "xp": 0})
-    
-    bal = user_data.get("balance", 0)
-    lvl = user_data.get("level", 1)
-    xp = user_data.get("xp", 0)
-
-    # صنع رسالة مرتبة (Embed)
-    embed = discord.Embed(title=f"👤 ملف {member.display_name}", color=0x3498db)
-    embed.set_thumbnail(url=member.avatar.url if member.avatar else None)
-    embed.add_field(name="💰 الكوينز", value=f"{bal:,}", inline=True)
-    embed.add_field(name="🆙 المستوى", value=f"**{lvl}**", inline=True)
-    embed.add_field(name="✨ الخبرة (XP)", value=f"{xp}/100", inline=True)
-    
-    await ctx.reply(embed=embed)
 
 # آخر سطر في ملفك لازم يكون كذا:
 token = os.getenv("TOKEN")
