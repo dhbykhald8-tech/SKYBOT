@@ -366,7 +366,7 @@ questions_list = [
 # قائمة مؤقتة عشان ما تتكرر الأسئلة
 asked_questions = []
 
-@tasks.loop(hours=1) # الوقت: كل ساعة
+@tasks.loop(seconds=10) # الوقت: كل ساعة
 async def auto_question_task():
     global asked_questions
     
