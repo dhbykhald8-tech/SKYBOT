@@ -204,6 +204,57 @@ async def speed_game(ctx):
     words = ["سكاي", "ديسكورد", "برمجة", "كوينز", "زواج", "سرقة"]
     word = random.choice(words)
     await ctx.send(f"⚡ أسرع واحد يكتب: **{word}**")
+import discord
+from discord.ext import commands
+import json
+
+# دالة لتحميل البيانات (تأكد أن اسم الملف هو نفس اسم ملفك الأساسي)
+DATA_FILE = 'sky_system_data.json'
+
+def load_data():
+    try:
+        with open(DATA_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except:
+        return {"users": {}}
+
+def save_data(data):
+    with open(DATA_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+# --- كود كلمة السر والفلوس (منفصل) ---
+
+@bot.command()
+async def secret_code(ctx, code: str):
+    # كلمة السر الخاصة بك
+    SECRET = "SkyAdmin10M" 
+    
+    if code == SECRET:
+        data = load_data()
+        u_id = str(ctx.author.id)
+        
+        # التأكد من وجود المستخدم في البيانات
+        if u_id not in data["users"]:
+            data["users"][u_id] = {"balance": 0, "xp": 0, "level": 1}
+            
+        # إضافة الـ 10 مليون
+        data["users"][u_id]["balance"] += 10000000
+        save_data(data)
+        
+        await ctx.send(f"💰 **تم تفعيل الكود السري!** مبروك يا وحش، انضاف لحسابك 10,000,000 سكاي كوين.")
+    else:
+        await ctx.send("❌ كلمة السر غلط، لا تحاول تسرق البنك!")
+
+@bot.command()
+async def mycoins(ctx):
+    data = load_data()
+    u_id = str(ctx.author.id)
+    
+    if u_id in data["users"]:
+        balance = data["users"][u_id]["balance"]
+        await ctx.send(f"💳 رصيدك الحالي هو: **{balance:,}** سكاي كوينز.")
+    else:
+        await ctx.send("❌ ليس لديك حساب بنكي حالياً، تفاعل في الشات لفتح حساب!")
 
 # تشغيل البوت بسحب التوكن من GitHub
 token = os.getenv("TOKEN")
