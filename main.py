@@ -520,3 +520,114 @@ async def work(ctx):
     save_data(user_data); await ctx.send(f"👷 ربحت {amt}")
 
 bot.run("TOKEN")
+import discord
+from discord.ext import commands
+import random, json, asyncio
+
+intents = discord.Intents.all()
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+# --- نظام البيانات ---
+def load_data():
+    try:
+        with open('users.json', 'r') as f: return json.load(f)
+    except: return {}
+
+def save_data(data):
+    with open('users.json', 'w') as f: json.dump(data, f, indent=4)
+
+def load_qs():
+    try:
+        with open('questions.json', 'r', encoding='utf-8') as f: return json.load(f)
+    except: return []
+
+user_data = load_data()
+all_questions = load_qs()
+
+def check_u(uid):
+    if uid not in user_data: user_data[uid] = {'coins': 1000, 'partner': None}
+
+# --- نظام التحقق (الروم والرتبة) ---
+async def is_allowed(ctx):
+    if ctx.channel.name != 'الشات-العام💬': return False
+    role = discord.utils.get(ctx.author.roles, name="فعاليات")
+    if role is None:
+        await ctx.send("❌ لازم رتبة **فعاليات** وفي **الشات العام**!")
+        return False
+    return True
+
+# --- 1. القائمة الشاملة ---
+@bot.command()
+async def games(ctx):
+    if not await is_allowed(ctx): return
+    embed = discord.Embed(title="🎮 موسوعة ألعاب سكاي الكبرى", color=0x3498db)
+    embed.add_field(name="🎰 ألعاب الحظ والمخاطرة", value="`!roulette` `!adventure` `!flip` `!dice` `!slots` `!rob`", inline=False)
+    embed.add_field(name="🌪️ مسابقات ذكاء", value="`!تحدي` (2000 سؤال) `!math` `!guess`", inline=False)
+    embed.add_field(name="💰 النظام المالي", value="`!marry` `!divorce` `!bal` `!work`", inline=False)
+    await ctx.send(embed=embed)
+
+# --- 2. لعبة الـ 2000 سؤال (تحدي) ---
+@bot.command()
+async def تحدي(ctx):
+    if not await is_allowed(ctx): return
+    global all_questions
+    if not all_questions: return await ctx.send("🚨 الأسئلة خلصت!")
+    q_data = random.choice(all_questions)
+    all_questions.remove(q_data)
+    with open('questions.json', 'w', encoding='utf-8') as f: json.dump(all_questions, f, indent=4)
+    
+    await ctx.send(embed=discord.Embed(title="🌪️ سؤال التحدي", description=q_data['q'], color=0x00ff00))
+    def check(m): return m.channel == ctx.channel and m.content.strip() == q_data['a']
+    try:
+        msg = await bot.wait_for('message', timeout=20.0, check=check)
+        uid = str(msg.author.id); check_u(uid)
+        user_data[uid]['coins'] += 1000; save_data(user_data)
+        await msg.reply(f"✅ كفو! +1000 كوينز. (باقي {len(all_questions)} سؤال)")
+    except: await ctx.send(f"⏰ وقت! الإجابة: {q_data['a']}")
+
+# --- 3. ألعاب الحظ (الروليت، المغامرة، إلخ) ---
+@bot.command()
+async def roulette(ctx, amt: int):
+    if not await is_allowed(ctx): return
+    uid = str(ctx.author.id); check_u(uid)
+    if user_data[uid]['coins'] < amt: return await ctx.send("رصيدك ما يكفي!")
+    if random.random() > 0.6: 
+        user_data[uid]['coins'] += amt
+        await ctx.send(f"🎰 كفو! دبلت مبلغك لـ {amt*2}")
+    else:
+        user_data[uid]['coins'] -= amt
+        await ctx.send("🎰 للأسف خسرت المراهنة")
+    save_data(user_data)
+
+@bot.command()
+async def adventure(ctx):
+    if not await is_allowed(ctx): return
+    uid = str(ctx.author.id); check_u(uid)
+    res = random.choice([("كنز أسطوري!", 1000), ("فخ مميت!", -500), ("رحلة عادية", 50)])
+    user_data[uid]['coins'] += res[1]; save_data(user_data)
+    await ctx.send(f"🤠 {res[0]} | الربح/الخسارة: {res[1]}")
+
+@bot.command()
+async def work(ctx):
+    if not await is_allowed(ctx): return
+    uid = str(ctx.author.id); check_u(uid)
+    amt = random.randint(100, 300)
+    user_data[uid]['coins'] += amt; save_data(user_data)
+    await ctx.send(f"👷 اشتغلت بجد وربحت {amt} كوينز")
+
+# --- (أنظمة الزواج والبنك) ---
+@bot.command()
+async def bal(ctx):
+    uid = str(ctx.author.id); check_u(uid); await ctx.send(f"💰 رصيدك: {user_data[uid]['coins']}")
+
+@bot.command()
+async def marry(ctx, m: discord.Member, amt: int):
+    if not await is_allowed(ctx): return
+    u, p = str(ctx.author.id), str(m.id)
+    check_u(u); check_u(p)
+    if user_data[u]['partner']: return await ctx.send("أنت متزوج!")
+    user_data[u]['partner'], user_data[p]['partner'] = p, u
+    user_data[u]['coins'] -= amt; user_data[p]['coins'] += amt
+    save_data(user_data); await ctx.send(f"💍 مبروك الزواج لـ {ctx.author.mention} و {m.mention}")
+
+bot.run("YOUR_TOKEN")
