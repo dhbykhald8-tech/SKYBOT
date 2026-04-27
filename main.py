@@ -308,29 +308,83 @@ async def marry(ctx, member: discord.Member = None):
             if interaction.user.id != member.id:
                 return await interaction.response.send_message("الطلب مو لك!", ephemeral=True)
             await interaction.response.edit_message(content=f"💔 {member.mention} رفض طلب الزواج.. خيرها بغيرها!", embed=None, view=None)
-     @bot.command(name="انفصال")
+# --- سطر 311: أوامر السيرفر ونظام الجوائز ---
+
+@bot.command(name="انفصال")
 async def divorce(ctx):
     data = load_data()
     u_id = str(ctx.author.id)
-    
-    # التأكد إذا كان الشخص متزوج أصلاً
     if u_id not in data["users"] or not data["users"][u_id].get("married_to"):
         await ctx.reply("❌ أنت عزوبي أصلاً، من منو تبي تنفصل؟ 😂")
         return
-
     partner_id = data["users"][u_id]["married_to"]
-    
-    # مسح بيانات الزواج للطرفين
     data["users"][u_id]["married_to"] = None
     if partner_id in data["users"]:
         data["users"][partner_id]["married_to"] = None
-    
     save_data(data)
-    await ctx.reply(f"💔 تم الانفصال بنجاح.. {ctx.author.mention} صار عزوبي ورجع لسوق العمل! 😂")
+    await ctx.reply(f"💔 تم الانفصال بنجاح.. {ctx.author.mention} صار عزوبي! 😂")
 
-# تشغيل البوت بسحب التوكن من GitHub
+questions_list = [
+    "ما هي عاصمة الكويت؟",
+    "من هو بطل أنمي ون بيس؟",
+    "كم عدد قارات العالم؟",
+    "ما هو أسرع حيوان بري؟",
+    "من هو مؤلف جوجوتسو كايسن؟",
+    "ما هو بطل Resident Evil 4؟"
+]
+asked_questions = []
+last_question = None
+
+@bot.event
+async def on_message(message):
+    global last_question
+    if message.author == bot.user:
+        return
+    
+    answers = {
+        "ما هي عاصمة الكويت؟": "الكويت",
+        "من هو بطل أنمي ون بيس؟": "لوفي",
+        "كم عدد قارات العالم؟": "7",
+        "ما هو أسرع حيوان بري؟": "الفهد",
+        "من هو مؤلف جوجوتسو كايسن؟": "أكوتامي",
+        "ما هو بطل Resident Evil 4؟": "ليون"
+    }
+
+    if last_question in answers:
+        if message.content.strip() == answers[last_question]:
+            data = load_data()
+            u_id = str(message.author.id)
+            if u_id not in data["users"]:
+                data["users"][u_id] = {"balance": 0, "married_to": None}
+            data["users"][u_id]["balance"] += 2000
+            save_data(data)
+            await message.reply(f"✅ كفو يا **{message.author.display_name}**! فزت بـ **2000 كوينز** 💰")
+            last_question = None
+            return
+
+    await bot.process_commands(message)
+
+@tasks.loop(hours=1)
+async def auto_question_task():
+    global asked_questions, last_question
+    target_channel = discord.utils.get(bot.get_all_channels(), name="الشات-العام💬")
+    if target_channel:
+        if len(asked_questions) >= len(questions_list):
+            asked_questions = []
+        available = [q for q in questions_list if q not in asked_questions]
+        if available:
+            question = random.choice(available)
+            asked_questions.append(question)
+            last_question = question
+            embed = discord.Embed(title="❓ سؤال الساعة", description=f"**{question}**", color=0xFFD700)
+            await target_channel.send(embed=embed)
+
+@bot.event
+async def on_ready():
+    print(f"✅ تم تشغيل {bot.user} بنجاح!")
+    if not auto_question_task.is_running():
+        auto_question_task.start()
+
 token = os.getenv("TOKEN")
 if token:
     bot.run(token)
-else:
-    print("❌ خطأ: التوكن غير موجود في متغيرات البيئة!")
