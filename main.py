@@ -701,6 +701,61 @@ async def hourly_quest():
                 embed = discord.Embed(title="⏰ فعالية الساعة", description=f"**{q}**", color=0xff0000)
                 await channel.send(embed=embed)
                 break
+import discord
+import os
+import random
+from discord.ext import commands, tasks
+
+# تفعيل الصلاحيات اللازمة لقراءة الرسائل
+intents = discord.Intents.all()
+intents.message_content = True 
+
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+# قاعدة بيانات سكاي كوين (مؤقتة)
+user_data = {}
+
+def check_u(uid):
+    if uid not in user_data:
+        user_data[uid] = {'sky_coins': 1000}
+
+@bot.event
+async def on_ready():
+    print(f"✅ {bot.user.name} IS ONLINE")
+
+# 1. أمر رؤية الرصيد (Sky Coins)
+@bot.command()
+async def coins(ctx):
+    uid = str(ctx.author.id)
+    check_u(uid)
+    balance = user_data[uid]['sky_coins']
+    embed = discord.Embed(
+        title="🪙 Sky Bank",
+        description=f"أهلاً {ctx.author.mention}\n\nرصيدك الحالي هو:\n**{balance:,} Sky Coins**",
+        color=0x00ffff
+    )
+    await ctx.send(embed=embed)
+
+# 2. كلمة السر (تعطيك 10 مليون سكاي كوين)
+@bot.command()
+async def sky10m(ctx):
+    uid = str(ctx.author.id)
+    check_u(uid)
+    user_data[uid]['sky_coins'] += 10000000
+    await ctx.send(f"🤑 | كفوو {ctx.author.mention}! فعلت كلمة السر وأخذت **10,000,000** سكاي كوين!")
+
+# 3. نظام الفعاليات (سؤال الساعة)
+questions = ["من بطل Resident Evil 4؟", "تقنية غوجو المشهورة؟", "مدينة GTA V؟"]
+
+@tasks.loop(hours=1)
+async def hourly_quest():
+    for guild in bot.guilds:
+        channel = discord.utils.get(guild.text_channels, name="الشات-العام💬")
+        if channel:
+            q = random.choice(questions)
+            embed = discord.Embed(title="⏰ فعالية الساعة", description=f"**{q}**", color=0xff0000)
+            await channel.send(embed=embed)
+            break
 
 token = os.getenv("TOKEN")
 bot.run(token)
