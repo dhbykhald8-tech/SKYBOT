@@ -308,80 +308,18 @@ async def marry(ctx, member: discord.Member = None):
             if interaction.user.id != member.id:
                 return await interaction.response.send_message("الطلب مو لك!", ephemeral=True)
             await interaction.response.edit_message(content=f"💔 {member.mention} رفض طلب الزواج.. خيرها بغيرها!", embed=None, view=None)
-# --- 1. قائمة الأسئلة التلقائية ---
 questions_list = [
-    "ما هي عاصمة الكويت؟",
-    "من هو بطل أنمي ون بيس؟",
-    "كم عدد قارات العالم؟",
-    "ما هو أسرع حيوان بري؟",
-    "من هو مؤلف جوجوتسو كايسن؟",
-    "ما هو بطل Resident Evil 4؟"
+    "من هو الشخصية التي لقبت بـ 'الوميض الأصفر' في أنمي ناروتو؟",
+    "ما اسم السيف الذي يستخدمه زورو ويقال أنه ملعون؟",
+    "في لعبة Resident Evil 4، ما اسم ابنة الرئيس التي ينقذها ليون؟",
+    "ما هو اسم الأنمي الذي تدور أحداثه حول كرة القدم وسجن 'القفل الأزرق'؟",
+    "من هو بطل سلسلة ألعاب God of War؟",
+    "ما اسم الشيطان الذي يسكن داخل جسد يوجي إيتادوري؟",
+    "في لعبة Elden Ring، ما هو اللقب الذي يطلق على اللاعب؟",
+    "ما هو اسم الأنمي الذي يقاتل فيه البشر عمالقة؟",
+    "من هي الشخصية التي تمتلك 'مفكرة الموت'؟",
+    "ما اسم القرية التي ينتمي إليها ناروتو؟"
 ]
-asked_questions = []
-# --- نظام التحقق من الإجابة وتوزيع الجوائز ---
-
-# أولاً: هذي قائمة الأجوبة الصحيحة (تأكد إنها بنفس ترتيب الأسئلة)
-answers_dict = {
-    "ما هي عاصمة الكويت؟": "الكويت",
-    "من هو بطل أنمي ون بيس؟": "لوفي",
-    "كم عدد قارات العالم؟": "7",
-    "ما هو أسرع حيوان بري؟": "الفهد",
-    "من هو مؤلف جوجوتسو كايسن؟": "أكوتامي",
-    "ما هو بطل Resident Evil 4؟": "ليون"
-}
-
-@bot.event
-async def on_message(message):
-    # إذا كانت الرسالة من البوت نفسه، تجاهلها
-    if message.author == bot.user:
-        return
-
-    # التحقق إذا كانت الإجابة صحيحة لسؤال الساعة
-    for question, answer in answers_dict.items():
-        # إذا كانت الإجابة موجودة في رسالة الشخص وكان السؤال هو آخر واحد نزل
-        if answer.lower() in message.content.lower():
-            # هنا نضيف كود إعطاء الكوينز (تعديل حسب نظام الفلوس عندك)
-            data = load_data()
-            user_id = str(message.author.id)
-            
-            if user_id not in data:
-                data[user_id] = {'balance': 0}
-            
-            data[user_id]['balance'] += 2000
-            save_data(data)
-            
-            await message.reply(f"✅ كفوو يا وحش! إجابة صحيحة، تم إضافة **2000 كوينز** لرصيدك! 💰")
-            break # عشان ما يعطيه مرتين
-
-    # ضروري جداً عشان أوامر البوت الثانية مثل !marry تظل شغالة
-    await bot.process_commands(message)
-
-# --- 2. نظام التوقيت ---
-@tasks.loop(hours=1)
-async def auto_question_task():
-    global asked_questions
-    target_channel = None
-    for guild in bot.guilds:
-        target_channel = discord.utils.get(guild.channels, name="الشات-العام💬")
-        if target_channel:
-            break
-
-    if target_channel:
-        if len(asked_questions) >= len(questions_list):
-            asked_questions = []
-        available = [q for q in questions_list if q not in asked_questions]
-        if available:
-            question = random.choice(available)
-            asked_questions.append(question)
-            embed = discord.Embed(title="❓ سؤال الساعة", description=f"**{question}**", color=0xFFD700)
-            await target_channel.send(embed=embed)
-
-# --- 3. تشغيل البوت والمهام ---
-@bot.event
-async def on_ready():
-    print(f"✅ {bot.user} متصل الآن!")
-    if not auto_question_task.is_running():
-        auto_question_task.start()
 
 # تشغيل البوت بسحب التوكن من GitHub
 token = os.getenv("TOKEN")
