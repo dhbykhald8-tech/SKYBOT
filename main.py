@@ -433,37 +433,31 @@ async def on_message(message):
     # عشان البوت ما يرد على نفسه ويكرر
     if message.author == bot.user:
         return
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
 
-    # --- بداية نظام اللفل ---
+    # --- نظام اللفل ---
     data = load_data()
     u_id = str(message.author.id)
-    
     if u_id not in data["users"]:
         data["users"][u_id] = {"balance": 0, "xp": 0, "level": 1}
     
     user = data["users"][u_id]
-    # التأكد من وجود خانات اللفل
-    if "xp" not in user: user["xp"] = 0
-    if "level" not in user: user["level"] = 1
-
-    # يعطيك 5 خبرة على كل رسالة
-    user["xp"] += 5
+    user["xp"] = user.get("xp", 0) + 5
     
-    # إذا جمعت 100 XP يرتفع لفلك
     if user["xp"] >= 100:
         user["xp"] = 0
-        user["level"] += 1
-        await message.channel.send(f"🆙 مبروك {message.author.mention}! ارتفع مستواك لفل **{user['level']}**")
+        user["level"] = user.get("level", 1) + 1
+        await message.channel.send(f"🆙 كفو {message.author.mention}! وصلت لفل **{user['level']}**")
     
     save_data(data)
-    # --- نهاية نظام اللفل ---
+    # --- نهاية اللفل ---
 
-    # ضروري جداً عشان أوامرك (السرقة والزواج) تضل شغالة
     await bot.process_commands(message)
-@bot.command(name="profile")
-async def profile(ctx, member: discord.Member = None):
 
-# آخر سطر في ملفك لازم يكون كذا:
+# هذا الجزء لازم يكون بآخر الملف وبدون أي فراغات قبله
 token = os.getenv("TOKEN")
 if token:
     bot.run(token)
