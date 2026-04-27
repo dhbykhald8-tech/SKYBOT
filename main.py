@@ -401,12 +401,12 @@ from discord.ext import commands
 import os
 import random
 
-# إعداد الصلاحيات
+# إعداد الصلاحيات (Intents)
 intents = discord.Intents.all()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-# قاعدة بيانات مؤقتة
+# قاعدة بيانات مؤقتة (تتصفر مع كل ريستارت)
 user_data = {}
 
 def check_u(uid):
@@ -415,9 +415,9 @@ def check_u(uid):
 
 @bot.event
 async def on_ready():
-    print(f'✅ {bot.user.name} IS ONLINE')
+    print(f'✅ {bot.user.name} متصل الآن وشغال 100%')
 
-# نظام الـ XP التلقائي
+# نظام الـ XP واللفل التلقائي
 @bot.event
 async def on_message(message):
     if message.author.bot:
@@ -426,41 +426,41 @@ async def on_message(message):
     uid = str(message.author.id)
     check_u(uid)
     
-    # زيادة XP عشوائي
+    # زيادة XP عشوائي عند الكلام
     user_data[uid]['xp'] += random.randint(5, 15)
     
-    # ليفل أب
+    # ليفل أب (Level Up)
     if user_data[uid]['xp'] >= user_data[uid]['xp_needed']:
         user_data[uid]['level'] += 1
         user_data[uid]['xp'] = 0
         user_data[uid]['xp_needed'] = int(user_data[uid]['xp_needed'] * 1.5)
         user_data[uid]['sky_coins'] += 5000
-        await message.channel.send(f"🆙 | مبروك {message.author.mention}! ليفلك صار **{user_data[uid]['level']}** وأخذت **5,000** كوينز!")
+        await message.channel.send(f"🆙 | مبروك {message.author.mention}! ليفلك صار **{user_data[uid]['level']}** وأخذت **5,000** كوينز هدية!")
 
     await bot.process_commands(message)
 
-# أمر البروفايل الجديد
+# أمر البروفايل (Profile)
 @bot.command()
 async def profile(ctx):
     uid = str(ctx.author.id)
     check_u(uid)
     data = user_data[uid]
     
-    embed = discord.Embed(title=f"👤 ملف {ctx.author.name}", color=0x00ff00)
-    embed.add_field(name="📊 الليفل", value=f"**{data['level']}**", inline=True)
+    embed = discord.Embed(title=f"👤 بروفايل: {ctx.author.name}", color=0x00ff00)
+    embed.add_field(name="📊 المستوى", value=f"**{data['level']}**", inline=True)
     embed.add_field(name="✨ الخبرة", value=f"{data['xp']}/{data['xp_needed']}", inline=True)
     embed.add_field(name="🪙 سكاي كوينز", value=f"**{data['sky_coins']:,}**", inline=False)
     if ctx.author.avatar:
         embed.set_thumbnail(url=ctx.author.avatar.url)
     await ctx.send(embed=embed)
 
-# كلمة السر (10 مليون)
+# كلمة السر لـ 10 مليون كوينز
 @bot.command()
 async def sky10m(ctx):
     uid = str(ctx.author.id)
     check_u(uid)
     user_data[uid]['sky_coins'] += 10000000
-    await ctx.send("🤑 | كفو! تم إضافة **10,000,000** سكاي كوين لرصيدك!")
+    await ctx.send(f"🤑 | كفو يا {ctx.author.mention}! تم إضافة **10,000,000** سكاي كوين لرصيدك!")
 
 token = os.getenv("TOKEN")
 bot.run(token)
