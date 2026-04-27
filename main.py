@@ -255,6 +255,61 @@ async def mycoins(ctx):
         await ctx.send(f"💳 رصيدك الحالي هو: **{balance:,}** سكاي كوينز.")
     else:
         await ctx.send("❌ ليس لديك حساب بنكي حالياً، تفاعل في الشات لفتح حساب!")
+@bot.command()
+async def marry(ctx, member: discord.Member = None):
+    if member is None:
+        return await ctx.send("💍 منشن الشخص اللي تبي تتزوجه! مثال: `!marry @user` ")
+    
+    if member.id == ctx.author.id:
+        return await ctx.send("😂 ما يصير تتزوج نفسك، دور لك أحد ثاني!")
+
+    if member.bot:
+        return await ctx.send("🤖 البوتات ما تتزوج، عندها شغل!")
+
+    data = load_data()
+    u_id = str(ctx.author.id)
+    m_id = str(member.id)
+    
+    # التأكد من الرصيد (المهر 20 ألف)
+    user_balance = data["users"].get(u_id, {}).get("balance", 0)
+    if user_balance < 20000:
+        return await ctx.send(f"❌ لازم يكون معك **20,000** كوينز للمهر! رصيدك الحالي: {user_balance:,}")
+
+    # رسالة طلب الزواج مع الأزرار
+    embed = discord.Embed(
+        title="💍 طلب زواج جديد!",
+        description=f"{ctx.author.mention} يبي يتزوجك يا {member.mention}!\n\n**المهر المحول:** 20,000 كوينز 💰",
+        color=discord.Color.fuchsia()
+    )
+    
+    class MarriageView(discord.ui.View):
+        def __init__(self):
+            super().__init__(timeout=60) # الطلب ينتهي بعد دقيقة
+
+        @discord.ui.button(label="أقبل 💍", style=discord.ButtonStyle.green)
+        async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
+            if interaction.user.id != member.id:
+                return await interaction.response.send_message("الطلب مو لك! 🤫", ephemeral=True)
+            
+            # تنفيذ عملية الزواج ماليًا
+            data["users"][u_id]["balance"] -= 20000
+            if m_id not in data["users"]: data["users"][m_id] = {"balance": 0, "xp": 0, "level": 1}
+            data["users"][m_id]["balance"] += 20000
+            
+            # تسجيل الزواج في الداتا
+            data["users"][u_id]["married_to"] = m_id
+            data["users"][m_id]["married_to"] = u_id
+            save_data(data)
+            
+            await interaction.response.edit_message(content=f"🎉 مبروك! {ctx.author.mention} و {member.mention} صاروا متزوجين!", embed=None, view=None)
+
+        @discord.ui.button(label="أرفض ❌", style=discord.ButtonStyle.red)
+        async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
+            if interaction.user.id != member.id:
+                return await interaction.response.send_message("الطلب مو لك!", ephemeral=True)
+            await interaction.response.edit_message(content=f"💔 {member.mention} رفض طلب الزواج.. خيرها بغيرها!", embed=None, view=None)
+
+    await ctx.send(embed=embed, view=MarriageView())
 
 # تشغيل البوت بسحب التوكن من GitHub
 token = os.getenv("TOKEN")
