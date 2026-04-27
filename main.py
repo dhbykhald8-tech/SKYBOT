@@ -4,14 +4,18 @@ import os
 import random
 import json
 
+# --- إعدادات البوت ---
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 DATA_FILE = "data.json"
-CHAT_ROOM_NAME = "الشات-العام💬"
+CHAT_ROOM_NAME = "الشات-العام💬" # تأكد من مطابقة الاسم تماماً
+
+# متغيرات النظام
 current_q = {"q": "", "a": ""}
+questions_pool = []
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -23,196 +27,290 @@ def save_data(data):
 
 user_data = load_data()
 
+# --- 100 سؤال منوعة ---
+ALL_QUESTIONS = [
+    # قيمنق وبيسي
+    {"q": "ما هو اختصار وحدة المعالجة المركزية؟", "a": "CPU"},
+    {"q": "بطل لعبة God of War؟", "a": "كريتوس"},
+    {"q": "أشهر كرت شاشة اقتصادي من انفيديا؟", "a": "GTX 1660"},
+    {"q": "لعبة شوتر وبناء مشهورة؟", "a": "فورتنايت"},
+    {"q": "اختصار ذاكرة الوصول العشوائي؟", "a": "RAM"},
+    {"q": "بطل لعبة Uncharted؟", "a": "نيثان دريك"},
+    {"q": "لعبة رعب في مدينة راكون سيتي؟", "a": "Resident Evil"},
+    {"q": "شركة صنعت جهاز بلايستيشن؟", "a": "سوني"},
+    {"q": "لعبة كرة قدم بالسيارات؟", "a": "روكيت ليغ"},
+    {"q": "أعلى دقة وضوح حالياً في الشاشات؟", "a": "8K"},
+    {"q": "نظام تشغيل أغلب أجهزة البيسي؟", "a": "ويندوز"},
+    {"q": "لعبة مشهورة عالمها من المكعبات؟", "a": "ماينكرافت"},
+    {"q": "ماذا يرمز اختصار GPU؟", "a": "كرت الشاشة"},
+    {"q": "بطلة لعبة Tomb Raider؟", "a": "لارا كروفت"},
+    {"q": "برنامج تواصل أساسي للقيمرز؟", "a": "ديسكورد"},
+    {"q": "لعبة شوتر تكتيكية من شركة Riot؟", "a": "فالورانت"},
+    {"q": "أداة تستخدم لتبريد المعالج؟", "a": "مبرد"},
+    {"q": "ما هو محرك ألعاب شركة Epic؟", "a": "Unreal Engine"},
+    {"q": "لعبة فازت بلعبة العام 2023؟", "a": "Baldur's Gate 3"},
+    {"q": "أول جهاز من نينتندو؟", "a": "NES"},
+
+    # أفلام ومسلسلات
+    {"q": "مسلسل بطله ريك غرايمز والزومبي؟", "a": "The Walking Dead"},
+    {"q": "ممثل دور الجوكر في Dark Knight؟", "a": "هيث ليدجر"},
+    {"q": "مسلسل كوري فيه ألعاب موت؟", "a": "Squid Game"},
+    {"q": "بطل أفلام Mission Impossible؟", "a": "توم كروز"},
+    {"q": "مسلسل صراع العروش؟", "a": "Game of Thrones"},
+    {"q": "فيلم أحلام من إخراج نولان؟", "a": "Inception"},
+    {"q": "مسلسل عصابة تسرق البنك؟", "a": "La Casa de Papel"},
+    {"q": "بطل مسلسل بريزون بريك؟", "a": "مايكل سكوفيلد"},
+    {"q": "فيلم الكائنات الزرقاء؟", "a": "Avatar"},
+    {"q": "أول فيلم في عالم مارفل؟", "a": "Iron Man"},
+    {"q": "مسلسل كيميائي يطبخ مخدرات؟", "a": "Breaking Bad"},
+    {"q": "الغابة التي عاش فيها ماوكلي؟", "a": "سيوني"},
+    {"q": "فيلم الدمية تشاكي؟", "a": "Child's Play"},
+    {"q": "مخرج فيلم تايتانيك؟", "a": "جيمس كاميرون"},
+    {"q": "مسلسل قوى خارقة في الثمانينات؟", "a": "Stranger Things"},
+    {"q": "بطل أفلام جون ويك؟", "a": "كيانو ريفز"},
+    {"q": "مدرسة هاري بوتر؟", "a": "هوجوورتس"},
+    {"q": "فيلم ديناصورات في حديقة؟", "a": "Jurassic Park"},
+    {"q": "أنمي صبي يريد ملك القراصنة؟", "a": "One Piece"},
+    {"q": "عدو باتمان اللدود؟", "a": "الجوكر"},
+
+    # كيمياء وعلوم
+    {"q": "الرمز الكيميائي للماء؟", "a": "H2O"},
+    {"q": "الرمز الكيميائي للذهب؟", "a": "Au"},
+    {"q": "الرمز الكيميائي للأكسجين؟", "a": "O2"},
+    {"q": "أخف عنصر كيميائي؟", "a": "الهيدروجين"},
+    {"q": "الرمز الكيميائي لملح الطعام؟", "a": "NaCl"},
+    {"q": "الكوكب الأحمر؟", "a": "المريخ"},
+    {"q": "أقرب كوكب للشمس؟", "a": "عطارد"},
+    {"q": "أكبر كوكب؟", "a": "المشتري"},
+    {"q": "الغاز الذي نتنفسه؟", "a": "الأكسجين"},
+    {"q": "معدن سائل؟", "a": "الزئبق"},
+    {"q": "الرمز الكيميائي للحديد؟", "a": "Fe"},
+    {"q": "الرمز الكيميائي للفضة؟", "a": "Ag"},
+    {"q": "مادة صلبة من الكربون؟", "a": "الألماس"},
+    {"q": "القوة التي تسحب للأرض؟", "a": "الجاذبية"},
+    {"q": "وحدة قياس التيار؟", "a": "الأمبير"},
+    {"q": "غاز الضحك؟", "a": "أكسيد النيتروز"},
+    {"q": "الطبقة التي تحمي الأرض؟", "a": "الأوزون"},
+    {"q": "أسرع شيء في الكون؟", "a": "الضوء"},
+    {"q": "جهاز رؤية النجوم؟", "a": "تلسكوب"},
+    {"q": "درجة غليان الماء؟", "a": "100"},
+
+    # عامة
+    {"q": "عاصمة الكويت؟", "a": "الكويت"},
+    {"q": "عاصمة السعودية؟", "a": "الالرياض"},
+    {"q": "مخترع المصباح؟", "a": "اديسون"},
+    {"q": "عدد أركان الإسلام؟", "a": "5"},
+    {"q": "أطول نهر؟", "a": "النيل"},
+    {"q": "أكبر قارة؟", "a": "آسيا"},
+    {"q": "قلوب الأخطبوط؟", "a": "3"},
+    {"q": "عملة الكويت؟", "a": "دينار"},
+    {"q": "أكبر دولة مساحة؟", "a": "روسيا"},
+    {"q": "مكتشف أمريكا؟", "a": "كولومبوس"},
+    {"q": "أيام السنة البسيطة؟", "a": "365"},
+    {"q": "عاصمة فرنسا؟", "a": "باريس"},
+    {"q": "أصغر دولة؟", "a": "الفاتيكان"},
+    {"q": "لغة البرازيل؟", "a": "البرتغالية"},
+    {"q": "سفينة الصحراء؟", "a": "الجمل"},
+    {"q": "أعلى قمة جبل؟", "a": "إفرست"},
+    {"q": "أسنان الإنسان البالغ؟", "a": "32"},
+    {"q": "لون الزمرد؟", "a": "أخضر"},
+    {"q": "مخترع الهاتف؟", "a": "غراهام بيل"},
+    {"q": "أكبر المحيطات؟", "a": "الهادي"},
+
+    # أنمي
+    {"q": "بطل دراغون بول؟", "a": "غوكو"},
+    {"q": "بطل نارتو؟", "a": "نارتو"},
+    {"q": "أنمي مفكرة الموت؟", "a": "Death Note"},
+    {"q": "بطل هجوم العمالقة؟", "a": "إيرين"},
+    {"q": "صديق لوفي السياف؟", "a": "زورو"},
+    {"q": "كرات التنين عددها؟", "a": "7"},
+    {"q": "أنمي قاتل الشياطين؟", "a": "Demon Slayer"},
+    {"q": "عين اليوتشيها؟", "a": "شارينقان"},
+    {"q": "صديق كيلوا؟", "a": "غون"},
+    {"q": "وحش نارتو؟", "a": "كوراما"},
+    {"q": "لقب لوفي؟", "a": "قبعة القش"},
+    {"q": "أذكى شخصية في ديث نوت؟", "a": "إل"},
+    {"q": "والد لوفي؟", "a": "دراغون"},
+    {"q": "قرية نارتو؟", "a": "كونوها"},
+    {"q": "ملك اللعنات؟", "a": "سوكونا"},
+    {"q": "بطل بليتش؟", "a": "إيتشيغو"},
+    {"q": "قائد الفرقة الأولى في بليتش؟", "a": "ياماموتو"},
+    {"q": "بطل فينلاند ساغا؟", "a": "ثورفين"},
+    {"q": "مدرب نارتو؟", "a": "ككاشي"},
+    {"q": "شقيق إيس ولوفي؟", "a": "سابو"}
+]
+
 @bot.event
 async def on_ready():
-    print(f'Logged in as {bot.user}')
+    print(f'Sky Bot is online as {bot.user}')
     auto_event.start()
 
 @bot.event
 async def on_message(message):
     if message.author.bot: return
     uid = str(message.author.id)
-    if uid not in user_data: user_data[uid] = {'coins': 100, 'xp': 0, 'level': 1}
+    
+    if uid not in user_data: 
+        user_data[uid] = {'coins': 100, 'xp': 0, 'level': 1, 'partner': None}
+    
+    # تحديد الحساب (مشترك أو فردي)
+    target_id = uid
+    if user_data[uid].get('partner'):
+        p_id = user_data[uid]['partner']
+        target_id = uid if int(uid) < int(p_id) else p_id
 
+    # نظام الأسئلة
     global current_q
     if current_q["a"] and message.channel.name == CHAT_ROOM_NAME:
         if message.content.strip().lower() == current_q["a"].lower():
-            user_data[uid]['coins'] += 2000
+            user_data[target_id]['coins'] += 2000
             save_data(user_data)
-            await message.reply(f"✅ كفو يا بطل! إجابتك صحيحة، أخذت 2000 كوينز! 💰")
+            await message.reply("✅ كفو! إجابة صحيحة، أخذت 2000 كوينز للحساب! 💰")
             current_q = {"q": "", "a": ""}
 
+    # ربح تلقائي
+    user_data[target_id]['coins'] += 2
     user_data[uid]['xp'] += 5
-    user_data[uid]['coins'] += 2
     save_data(user_data)
     await bot.process_commands(message)
 
-@tasks.loop(hours=1)
-async def auto_event():
-    channel = discord.utils.get(bot.get_all_channels(), name=CHAT_ROOM_NAME)
-    if not channel: return
-    
-    qs = [
-        # --- قيمنق وبيسي (20 سؤال) ---
-        {"q": "ما هو اختصار وحدة المعالجة المركزية؟", "a": "CPU"},
-        {"q": "بطل لعبة God of War؟", "a": "كريتوس"},
-        {"q": "أشهر كرت شاشة اقتصادي من انفيديا؟", "a": "GTX 1660"},
-        {"q": "لعبة شوتر وبناء مشهورة؟", "a": "فورتنايت"},
-        {"q": "اختصار ذاكرة الوصول العشوائي؟", "a": "RAM"},
-        {"q": "بطل لعبة Uncharted؟", "a": "نيثان دريك"},
-        {"q": "لعبة رعب في مدينة راكون سيتي؟", "a": "Resident Evil"},
-        {"q": "شركة صنعت جهاز بلايستيشن؟", "a": "سوني"},
-        {"q": "لعبة كرة قدم بالسيارات؟", "a": "روكيت ليغ"},
-        {"q": "أعلى دقة وضوح حالياً في الشاشات؟", "a": "8K"},
-        {"q": "نظام تشغيل أغلب أجهزة البيسي؟", "a": "ويندوز"},
-        {"q": "لعبة مشهورة عالمها من المكعبات؟", "a": "ماينكرافت"},
-        {"q": "محرك ألعاب مشهور من شركة Epic؟", "a": "Unreal Engine"},
-        {"q": "أداة تستخدم لتبريد المعالج؟", "a": "مبرد"},
-        {"q": "ماذا يرمز اختصار GPU؟", "a": "كرت الشاشة"},
-        {"q": "بطلة لعبة Tomb Raider؟", "a": "لارا كروفت"},
-        {"q": "لعبة تقمص أدوار فازت بجائزة لعبة العام 2023؟", "a": "Baldur's Gate 3"},
-        {"q": "أول جهاز ألعاب من شركة نينتندو؟", "a": "NES"},
-        {"q": "برنامج تواصل أساسي للقيمرز؟", "a": "ديسكورد"},
-        {"q": "لعبة شوتر تكتيكية من شركة Riot؟", "a": "فالورانت"},
-
-        # --- أفلام ومسلسلات (20 سؤال) ---
-        {"q": "مسلسل بطله ريك غرايمز والزومبي؟", "a": "The Walking Dead"},
-        {"q": "ممثل دور الجوكر في Dark Knight؟", "a": "هيث ليدجر"},
-        {"q": "مسلسل كوري اشتهر ببدلات حمراء وألعاب موت؟", "a": "Squid Game"},
-        {"q": "بطل سلسلة أفلام Mission Impossible؟", "a": "توم كروز"},
-        {"q": "مسلسل عن عائلات تتصارع على العرش؟", "a": "Game of Thrones"},
-        {"q": "فيلم خيال علمي من إخراج نولان عن الأحلام؟", "a": "Inception"},
-        {"q": "مسلسل بروفيسور وعصابته يسرقون البنك؟", "a": "La Casa de Papel"},
-        {"q": "اسم كوكب بطل مسلسل بريزون بريك؟", "a": "مايكل سكوفيلد"},
-        {"q": "فيلم فيه كائنات زرقاء تعيش في باندورا؟", "a": "Avatar"},
-        {"q": "أول فيلم في عالم مارفل السينمائي؟", "a": "Iron Man"},
-        {"q": "مسلسل يحكي قصة كيميائي يطبخ مخدرات؟", "a": "Breaking Bad"},
-        {"q": "اسم الغابة التي يعيش فيها ماوكلي؟", "a": "سيوني"},
-        {"q": "فيلم رعب عن دمية مسكونة اسمها تشاكي؟", "a": "Child's Play"},
-        {"q": "من هو مخرج فيلم تايتانيك؟", "a": "جيمس كاميرون"},
-        {"q": "مسلسل يحكي عن شباب في الثمانينات وقوى خارقة؟", "a": "Stranger Things"},
-        {"q": "بطل سلسلة أفلام جون ويك؟", "a": "كيانو ريفز"},
-        {"q": "اسم المدرسة في هاري بوتر؟", "a": "هوجوورتس"},
-        {"q": "فيلم يحكي عن ديناصورات في حديقة؟", "a": "Jurassic Park"},
-        {"q": "مسلسل أنمي عن صبي يريد أن يصبح ملك القراصنة؟", "a": "One Piece"},
-        {"q": "عدو باتمان اللدود؟", "a": "الجوكر"},
-
-        # --- كيمياء وعلوم (20 سؤال) ---
-        {"q": "الرمز الكيميائي للماء؟", "a": "H2O"},
-        {"q": "الرمز الكيميائي للذهب؟", "a": "Au"},
-        {"q": "الرمز الكيميائي للأكسجين؟", "a": "O2"},
-        {"q": "أخف عنصر كيميائي؟", "a": "الهيدروجين"},
-        {"q": "الرمز الكيميائي لملح الطعام؟", "a": "NaCl"},
-        {"q": "كوكب يسمى الكوكب الأحمر؟", "a": "المريخ"},
-        {"q": "أقرب كوكب للشمس؟", "a": "عطارد"},
-        {"q": "أكبر كوكب في المجموعة الشمسية؟", "a": "المشتري"},
-        {"q": "الغاز الذي نتنفسه؟", "a": "الأكسجين"},
-        {"q": "معدن سائل في درجة الحرارة العادية؟", "a": "الزئبق"},
-        {"q": "الرمز الكيميائي للحديد؟", "a": "Fe"},
-        {"q": "الرمز الكيميائي للفضة؟", "a": "Ag"},
-        {"q": "مادة صلبة جداً مكونة من الكربون؟", "a": "الألماس"},
-        {"q": "القوة التي تسحبنا للأرض؟", "a": "الجاذبية"},
-        {"q": "وحدة قياس التيار الكهربائي؟", "a": "الأمبير"},
-        {"q": "غاز يسبب الضحك؟", "a": "أكسيد النيتروز"},
-        {"q": "الطبقة التي تحمي الأرض من الأشعة الضارة؟", "a": "الأوزون"},
-        {"q": "أسرع شيء في الكون؟", "a": "الضوء"},
-        {"q": "جهاز يستخدم لرؤية النجوم؟", "a": "تلسكوب"},
-        {"q": "درجة غليان الماء؟", "a": "100"},
-
-        # --- أسئلة عامة (20 سؤال) ---
-        {"q": "عاصمة الكويت؟", "a": "الكويت"},
-        {"q": "عاصمة السعودية؟", "a": "الرياض"},
-        {"q": "مخترع المصباح الكهربائي؟", "a": "اديسون"},
-        {"q": "عدد أركان الإسلام؟", "a": "5"},
-        {"q": "أطول نهر في العالم؟", "a": "النيل"},
-        {"q": "أكبر قارة في العالم؟", "a": "آسيا"},
-        {"q": "كم عدد قلوب الأخطبوط؟", "a": "3"},
-        {"q": "ما هي عملة الكويت؟", "a": "دينار"},
-        {"q": "أكبر دولة مساحة في العالم؟", "a": "روسيا"},
-        {"q": "من هو مكتشف أمريكا؟", "a": "كولومبوس"},
-        {"q": "كم عدد أيام السنة البسيطة؟", "a": "365"},
-        {"q": "عاصمة فرنسا؟", "a": "باريس"},
-        {"q": "أصغر دولة في العالم؟", "a": "الفاتيكان"},
-        {"q": "ما هي لغة البرازيل الرسمية؟", "a": "البرتغالية"},
-        {"q": "حيوان يلقب بسفينة الصحراء؟", "a": "الجمل"},
-        {"q": "أعلى قمة جبل في العالم؟", "a": "إفرست"},
-        {"q": "كم عدد أسنان الإنسان البالغ؟", "a": "32"},
-        {"q": "ما هو لون الزمرد؟", "a": "أخضر"},
-        {"q": "مخترع الهاتف؟", "a": "غراهام بيل"},
-        {"q": "أكبر المحيطات في العالم؟", "a": "الهادي"},
-
-        # --- أنمي ومنوعات (20 سؤال) ---
-        {"q": "بطل أنمي Dragon Ball؟", "a": "غوكو"},
-        {"q": "بطل أنمي نارتو؟", "a": "نارتو"},
-        {"q": "أنمي فيه مفكرة تقتل الناس؟", "a": "Death Note"},
-        {"q": "بطل أنمي Attack on Titan؟", "a": "إيرين"},
-        {"q": "اسم الالي في أنمي جريندايزر؟", "a": "جريندايزر"},
-        {"q": "ما اسم صديق لوفي السياف؟", "a": "زورو"},
-        {"q": "كم عدد كرات التنين في دراغون بول؟", "a": "7"},
-        {"q": "أنمي يحكي عن صائدين شياطين بطلهم تانجيرو؟", "a": "Demon Slayer"},
-        {"q": "ما هي عين اليوتشيها في نارتو؟", "a": "شارينقان"},
-        {"q": "صديق القناص كيلوا المفضل؟", "a": "غون"},
-        {"q": "اسم الوحش داخل نارتو؟", "a": "كوراما"},
-        {"q": "أنمي بطلة يرتدي قناع ويسمى الزيرو؟", "a": "Code Geass"},
-        {"q": "ما هو لقب لوفي؟", "a": "قبعة القش"},
-        {"q": "أذكى شخصية في أنمي ديث نوت؟", "a": "إل"},
-        {"q": "من هو والد لوفي؟", "a": "دراغون"},
-        {"q": "اسم السيف في فن السيف أونلاين؟", "a": "إيلوسيديتور"},
-        {"q": "ما اسم القرية في أنمي نارتو؟", "a": "كونوها"},
-        {"q": "كم عدد قادة قراصنة اللحية البيضاء؟", "a": "16"},
-        {"q": "من هو ملك اللعنات في جوجوتسو كايسن؟", "a": "سوكونا"},
-        {"q": "بطل أنمي بليتش؟", "a": "إيتشيغو"}
-    ]
-    
-    global current_q
-    current_q = random.choice(qs)
-    
-    embed = discord.Embed(title="🎮 فعالية سكاي المنوعة", 
-                          description=f"**السؤال:** {current_q['q']}\n\nأسرع واحد يجاوب ياخذ **2000 كوينز**!", 
-                          color=0x3498db)
-    await channel.send(embed=embed)
-
-# --- الأوامر الأساسية ---
-@bot.command(aliases=['coins', 'bal', 'فلوس'])
-async def balance(ctx, member: discord.Member = None):
-    m = member or ctx.author
-    d = user_data.get(str(m.id), {'coins': 0})
-    await ctx.send(f"💰 رصيد **{m.display_name}**: `{d['coins']}` كوينز")
-
-@bot.command()
-async def sky10(ctx):
-    user_data[str(ctx.author.id)]['coins'] += 10000000
-    save_data(user_data)
-    await ctx.send("💰 تم تفعيل شفرة الـ 10 مليون!")
-    try: await ctx.message.delete()
-    except: pass
-
-token = os.getenv('DISCORD_TOKEN')
-bot.run(token)
-# أضف هذا السطر فوق تحت تعريف الـ user_data
-questions_pool = []
-
+# --- الفعالية التلقائية كل ساعة ---
 @tasks.loop(hours=1)
 async def auto_event():
     channel = discord.utils.get(bot.get_all_channels(), name=CHAT_ROOM_NAME)
     if not channel: return
     
     global current_q, questions_pool
-    
-    # إذا خلصت الأسئلة أو لسه ما تعبت، نعبيها من جديد
     if not questions_pool:
-        # هنا تحط القائمة الكبيرة (الـ 100 سؤال)
-        questions_pool = [
-            {"q": "كم عدد أركان الإسلام؟", "a": "5"},
-            {"q": "ماهي عاصمة الكويت؟", "a": "الكويت"},
-            # ... باقي الـ 100 سؤال هنا ...
-        ]
-        random.shuffle(questions_pool) # يخلطهم عشان الترتيب يتغير كل مرة
+        questions_pool = ALL_QUESTIONS.copy()
+        random.shuffle(questions_pool)
 
-    # نسحب سؤال ونحذفه من القائمة عشان ما يرجع
     current_q = questions_pool.pop()
-    
     embed = discord.Embed(title="🎮 فعالية سكاي المنوعة", 
                           description=f"**السؤال:** {current_q['q']}\n\nأسرع واحد يجاوب ياخذ **2000 كوينز**!", 
                           color=0x3498db)
     await channel.send(embed=embed)
+
+# --- أوامر الزواج والحساب المشترك ---
+@bot.command()
+async def marry(ctx, member: discord.Member, amount: int):
+    uid, mid = str(ctx.author.id), str(member.id)
+    if user_data[uid]['coins'] < amount: return await ctx.send("❌ ما عندك المهر!")
+    if user_data[uid].get('partner') or user_data[mid].get('partner'): return await ctx.send("أحدكم متزوج!")
+
+    view = discord.ui.View()
+    async def confirm(i):
+        if i.user != member: return
+        user_data[uid]['partner'], user_data[mid]['partner'] = mid, uid
+        user_data[uid]['coins'] -= amount
+        user_data[mid]['coins'] += amount
+        
+        # دمج الأرصدة
+        main = uid if int(uid) < int(mid) else mid
+        other = mid if main == uid else uid
+        user_data[main]['coins'] += user_data[other]['coins']
+        user_data[other]['coins'] = 0
+        save_data(user_data)
+        await i.response.edit_message(content=f"💍 مبروك الزواج والحساب المشترك! المهر: {amount}", view=None)
+
+    btn = discord.ui.Button(label="موافقة ✅", style=discord.ButtonStyle.green)
+    btn.callback = confirm
+    view.add_item(btn)
+    await ctx.send(f"💍 {member.mention}، يقدم لك {ctx.author.mention} مهر {amount}.. موافقة؟", view=view)
+
+@bot.command()
+async def divorce(ctx):
+    uid = str(ctx.author.id)
+    if not user_data[uid].get('partner'): return
+    pid = user_data[uid]['partner']
+    main = uid if int(uid) < int(pid) else pid
+    half = user_data[main]['coins'] // 2
+    user_data[uid]['coins'], user_data[pid]['coins'] = half, half
+    user_data[uid]['partner'], user_data[pid]['partner'] = None, None
+    save_data(user_data)
+    await ctx.send("💔 تم الانفصال وتقسيم الحساب بالنص.")
+
+# --- أوامر أساسية ---
+@bot.command(aliases=['bal', 'فلوس'])
+async def balance(ctx, member: discord.Member = None):
+    m = member or ctx.author
+    uid = str(m.id)
+    if user_data.get(uid, {}).get('partner'):
+        p = user_data[uid]['partner']
+        main = uid if int(uid) < int(p) else p
+        await ctx.send(f"👪 حساب عائلة **{m.display_name}**: `{user_data[main]['coins']}` كوينز")
+    else:
+        await ctx.send(f"💰 رصيد **{m.display_name}**: `{user_data.get(uid, {'coins':0})['coins']}`")
+
+@bot.command()
+async def sky10(ctx):
+    user_data[str(ctx.author.id)]['coins'] += 10000000
+    save_data(user_data)
+    await ctx.send("💰 تم إضافة 10 مليون عملة!")
+    try: await ctx.message.delete()
+    except: pass
+
+token = os.getenv('DISCORD_TOKEN')
+bot.run(token)
+# --- أمر الزواج مع إعطاء الرتبة ---
+@bot.command()
+async def marry(ctx, member: discord.Member, amount: int):
+    uid, mid = str(ctx.author.id), str(member.id)
+    if user_data[uid]['coins'] < amount: return await ctx.send("❌ ما عندك المهر!")
+    if user_data[uid].get('partner') or user_data[mid].get('partner'): return await ctx.send("أحدكم متزوج!")
+
+    view = discord.ui.View()
+    async def confirm(i):
+        if i.user != member: return
+        
+        # تنفيذ الزواج في البيانات
+        user_data[uid]['partner'], user_data[mid]['partner'] = mid, uid
+        user_data[uid]['coins'] -= amount
+        user_data[mid]['coins'] += amount
+        
+        # دمج الأرصدة
+        main = uid if int(uid) < int(mid) else mid
+        other = mid if main == uid else uid
+        user_data[main]['coins'] += user_data[other]['coins']
+        user_data[other]['coins'] = 0
+        save_data(user_data)
+
+        # --- إعطاء الرتبة تلقائياً ---
+        role = discord.utils.get(ctx.guild.roles, name="متزوج")
+        if role:
+            try:
+                await ctx.author.add_roles(role)
+                await member.add_roles(role)
+            except:
+                print("تأكد أن رتبة البوت أعلى من رتبة متزوج")
+
+        await i.response.edit_message(content=f"💍 مبروك الزواج والحساب المشترك! المهر: {amount}\nتم إعطاؤكم رتبة **{role.name if role else 'متزوج'}**! 🎉", view=None)
+
+    btn = discord.ui.Button(label="موافقة ✅", style=discord.ButtonStyle.green)
+    btn.callback = confirm
+    view.add_item(btn)
+    await ctx.send(f"💍 {member.mention}، يقدم لك {ctx.author.mention} مهر {amount}.. موافقة؟", view=view)
+
+# --- أمر الانفصال مع سحب الرتبة ---
+@bot.command()
+async def divorce(ctx):
+    uid = str(ctx.author.id)
+    if not user_data[uid].get('partner'): return
+    pid = user_data[uid]['partner']
+    
+    # سحب الرتبة عند الانفصال
+    role = discord.utils.get(ctx.guild.roles, name="متزوج")
+    if role:
+        try:
+            member_partner = ctx.guild.get_member(int(pid))
+            await ctx.author.remove_roles(role)
+            if member_partner: await member_partner.remove_roles(role)
+        except:
+            pass
+
+    main = uid if int(uid) < int(pid) else pid
+    half = user_data[main]['coins'] // 2
+    user_data[uid]['coins'], user_data[pid]['coins'] = half, half
+    user_data[uid]['partner'], user_data[pid]['partner'] = None, None
+    save_data(user_data)
+    await ctx.send("💔 تم الانفصال.. سحبنا رتبة متزوج وقسمنا الحساب بالنص.")
