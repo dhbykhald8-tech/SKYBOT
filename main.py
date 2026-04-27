@@ -723,3 +723,10 @@ async def daily(ctx):
 # --- (أضف باقي الأوامر السابقة هنا: تحدي، روليت، زواج) ---
 
 bot.run("YOUR_TOKEN")
+async def is_allowed(ctx):
+    # نتحقق فقط من الرتبة، والاسم ما يهمنا الحين عشان يشتغل معك
+    role = discord.utils.get(ctx.author.roles, name="فعاليات")
+    if role is None:
+        await ctx.send("❌ لازم يكون عندك رتبة اسمُها **فعاليات** بالضبط!")
+        return False
+    return True
