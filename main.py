@@ -411,3 +411,11 @@ async def on_ready():
 @bot.command(aliases=['games', 'العاب'])
 async def help_cmd(ctx):
     await ctx.send("🎮 ألعاب البوت: \n1. فعاليات كل ساعة \n2. نظام الزواج \n3. نظام السرقة")
+@bot.command()
+async def games(ctx):
+    embed = discord.Embed(title="🎮 ألعاب Sky Bot", color=0x3498db)
+    embed.add_field(name="💍 الزواج", value="`!marry @user [المهر]`\nنظام الحساب المشترك والرتب", inline=False)
+    embed.add_field(name="💔 الانفصال", value="`!divorce` \n(شرط مرور أسبوع للتقسيم)", inline=False)
+    embed.add_field(name="💰 البنك", value="`!bal` أو `!balance`", inline=False)
+    embed.add_field(name="🧠 الفعاليات", value="سؤال آلي كل ساعة بـ 2000 كوينز", inline=False)
+    await ctx.send(embed=embed)
