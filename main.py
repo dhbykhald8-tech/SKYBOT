@@ -342,7 +342,6 @@ async def hourly_quest():
                 await channel.send(embed=embed)
                 break
 
-)
 
 # قائمة 100 سؤال (أنمي وألعاب)
 questions = [
