@@ -120,5 +120,5 @@ async def on_ready():
     voice_xp_loop.start()
     print("READY")
 
-bot.run("حط_التوكن_هنا")
+bot.run(MTQ5ODEzOTEyODAzNzExMzg1Ng.GH3rfP.ADsDqlBzAOXgtNMWKPVBVKjko8q3BKZpUJyW-8)
 
