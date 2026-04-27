@@ -14,7 +14,6 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 user_xp = {}
 REQUIRED_ROLE_NAME = "فعاليات"
-# تعديل اسم الروم إلى "ترحيب" فقط
 WELCOME_CHANNEL_NAME = "ترحيب"
 
 @bot.event
@@ -23,23 +22,31 @@ async def on_ready():
 
 @bot.event
 async def on_member_join(member):
-    # البحث عن القناة باسم "ترحيب"
     channel = discord.utils.get(member.guild.text_channels, name=WELCOME_CHANNEL_NAME)
     if channel:
         try:
+            # صورة سماء وسحاب فخمة للبنر
             bg_url = "https://wallpaperaccess.com/full/175910.jpg"
             background = Editor(await load_image_async(bg_url)).resize((800, 450))
-            avatar = Editor(await load_image_async(member.display_avatar.url)).resize((200, 200)).circle_clip()
+            
+            # صورة بروفايل الشخص
+            avatar_image = await load_image_async(member.display_avatar.url)
+            avatar = Editor(avatar_image).resize((200, 200)).circle_clip()
+            
+            # وضع الصورة في المنتصف
             background.paste(avatar, (300, 80))
             
+            # إضافة النصوص
             font_big = Font.poppins(size=50, variant="bold")
             font_small = Font.poppins(size=35, variant="regular")
+            
             background.text((400, 300), "WELCOME", color="white", font=font_big, align="center")
             background.text((400, 370), f"{member.name}", color="white", font=font_small, align="center")
             
             file = discord.File(fp=background.image_bytes, filename="welcome.png")
-            await channel.send(f"حياك الله {member.mention} نورتنا! ☁️✨", file=file)
-        except:
+            await channel.send(f"منور السيرفر يا {member.mention}! ☁️✨", file=file)
+        except Exception as e:
+            print(f"Image Error: {e}")
             await channel.send(f"منور السيرفر يا {member.mention}!")
 
 @bot.event
@@ -59,6 +66,7 @@ async def on_message(message):
         await message.channel.send("🎮 **الألعاب:**\n`!level` | `!slots` | `!fast` | `!roll` | `!flip` | `!ball` | `!roulette`")
     await bot.process_commands(message)
 
+# --- تصحيح الأوامر عشان ما يكرش البوت ---
 @bot.command()
 async def level(ctx):
     d = user_xp.get(str(ctx.author.id), {'level': 1, 'xp': 0})
@@ -77,7 +85,7 @@ async def slots(ctx):
 @bot.command()
 async def roll(ctx): await ctx.send(f"🎲: {random.randint(1, 6)}")
 
-@bot.command(name="ball")
+@bot.command(name="ball") # غيرنا الاسم من 8ball لـ ball عشان ما يكرش
 async def ball(ctx):
     await ctx.send(f"🔮: {random.choice(['نعم', 'لا', 'ممكن جداً'])}")
 
