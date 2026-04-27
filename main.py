@@ -757,5 +757,51 @@ async def hourly_quest():
             await channel.send(embed=embed)
             break
 
+import discord
+from discord.ext import commands, tasks
+import os
+import random
+
+# أهم جزء: تفعيل الصلاحيات
+intents = discord.Intents.all()
+intents.message_content = True
+
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+# قاعدة البيانات
+user_data = {}
+
+def check_u(uid):
+    if uid not in user_data:
+        user_data[uid] = {'sky_coins': 1000, 'level': 1, 'xp': 0}
+
+@bot.event
+async def on_ready():
+    print(f'✅ {bot.user.name} IS ONLINE')
+
+# أمر السكاي كوين
+@bot.command()
+async def coins(ctx):
+    uid = str(ctx.author.id)
+    check_u(uid)
+    balance = user_data[uid]['sky_coins']
+    await ctx.send(f"🪙 | رصيدك الحالي: **{balance:,} Sky Coins**")
+
+# أمر اللفل
+@bot.command()
+async def level(ctx):
+    uid = str(ctx.author.id)
+    check_u(uid)
+    lvl = user_data[uid]['level']
+    await ctx.send(f"📊 | ليفلك الحالي: **{lvl}**")
+
+# كلمة السر (10 مليون)
+@bot.command()
+async def sky10m(ctx):
+    uid = str(ctx.author.id)
+    check_u(uid)
+    user_data[uid]['sky_coins'] += 10000000
+    await ctx.send("🤑 | كفو! تم إضافة **10,000,000** سكاي كوين لرصيدك!")
+
 token = os.getenv("TOKEN")
 bot.run(token)
