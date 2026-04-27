@@ -419,3 +419,11 @@ async def games(ctx):
     embed.add_field(name="💰 البنك", value="`!bal` أو `!balance`", inline=False)
     embed.add_field(name="🧠 الفعاليات", value="سؤال آلي كل ساعة بـ 2000 كوينز", inline=False)
     await ctx.send(embed=embed)
+@bot.command()
+async def games(ctx):
+    embed = discord.Embed(title="🎮 ألعاب سكاي بوت", color=0x3498db)
+    embed.add_field(name="💍 نظام الزواج", value="`!marry @user [المهر]`\nنظام الحساب المشترك والرتب", inline=False)
+    embed.add_field(name="💔 الانفصال", value="`!divorce` \n(شرط مرور أسبوع للتقسيم)", inline=False)
+    embed.add_field(name="💰 البنك", value="`!bal` أو `!balance` \nلرؤية رصيدك أو رصيد العائلة", inline=False)
+    embed.add_field(name="🧠 الفعاليات", value="سؤال آلي كل ساعة بـ 2000 كوينز", inline=False)
+    await ctx.send(embed=embed)
