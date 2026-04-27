@@ -344,6 +344,94 @@ async def steal(ctx, member: discord.Member):
         data["users"][u_id]["balance"] -= penalty
         save_data(data)
         await ctx.reply(f"🚨 انقفطت! {ctx.author.mention} حاول يسرق وانصاد، ودفع غرامة **200** كوينز! 😂")
+# --- نظام الألعاب واللفلات الموحد ---
+
+# 1. إعداد الأسئلة
+game_questions = {
+    "من هو بطل Resident Evil 4؟": "ليون",
+    "ما اسم الشيطان داخل إيتادوري؟": "سوكونا",
+    "ما هو اللقب الذي يطلق على ميناتو؟": "الوميض الأصفر",
+    "كم مهر الزواج في هذا البوت؟": "20000"
+}
+active_question = None
+
+# 2. دالة تحديث اللفل والـ XP (بدقة)
+def add_user_xp(user_id, xp_amount, money_reward=0):
+    data = load_data()
+    u_id = str(user_id)
+    if u_id not in data["users"]:
+        data["users"][u_id] = {"balance": 0, "married_to": None, "xp": 0, "level": 1}
+    
+    # التأكد من وجود الخانات عشان ما يكرش
+    user = data["users"][u_id]
+    user["xp"] = user.get("xp", 0) + xp_amount
+    user["balance"] = user.get("balance", 0) + money_reward
+    
+    # نظام اللفل: كل 100 XP يرفع لفل
+    leveled_up = False
+    current_xp = user["xp"]
+    current_lvl = user.get("level", 1)
+    
+    if current_xp >= 100:
+        user["xp"] = current_xp - 100
+        user["level"] = current_lvl + 1
+        leveled_up = True
+    
+    save_data(data)
+    return leveled_up, user["level"]
+
+# 3. محرك الاستماع (on_message) - هذا أهم جزء للألعاب
+@bot.event
+async def on_message(message):
+    global active_question
+    if message.author == bot.user:
+        return
+
+    # أولاً: أعطِ XP بسيط على كل رسالة عشان يرتفع اللفل
+    add_user_xp(message.author.id, 5)
+
+    # ثانياً: تحقق إذا كانت الرسالة هي إجابة للسؤال الحالي
+    if active_question in game_questions:
+        if message.content.strip() == game_questions[active_question]:
+            is_up, new_lvl = add_user_xp(message.author.id, 30, 2000)
+            await message.reply(f"✅ إجابة صحيحة! فزت بـ **2000** كوينز و **30** XP.")
+            if is_up:
+                await message.send(f"🎊 مبروك {message.author.mention}! ارتفع مستواك لفل **{new_lvl}**")
+            active_question = None
+            return
+
+    # ثالثاً: شغل الأوامر العادية (!marry, !steal, etc)
+    await bot.process_commands(message)
+
+# 4. أمر يدوي لتشغيل اللعبة (للتجربة)
+@bot.command(name="سؤال")
+async def ask_game(ctx):
+    global active_question
+    active_question = random.choice(list(game_questions.keys()))
+    await ctx.send(f"❓ **سؤال اللعبة:**\n{active_question}")
+
+# 5. أمر البروفايل لعرض اللفل (عشان تتأكد إنه شغال)
+@bot.command(name="profile")
+async def profile(ctx, member: discord.Member = None):
+    member = member or ctx.author
+    data = load_data()
+    u_id = str(member.id)
+    user = data["users"].get(u_id, {"balance": 0, "level": 1, "xp": 0})
+    
+    embed = discord.Embed(title=f"👤 بروفايل {member.display_name}", color=0x3498db)
+    embed.add_field(name="🆙 المستوى", value=f"**{user.get('level', 1)}**", inline=True)
+    embed.add_field(name="✨ الـ XP", value=f"{user.get('xp', 0)}/100", inline=True)
+    embed.add_field(name="💰 الرصيد", value=f"{user.get('balance', 0):,}", inline=False)
+    await ctx.reply(embed=embed)
+
+@bot.event
+async def on_ready():
+    print(f"✅ {bot.user} متصل: الألعاب واللفلات مفعلة!")
+
+# تشغيل البوت
+token = os.getenv("TOKEN")
+if token:
+    bot.run(token)
 
 token = os.getenv("TOKEN")
 if token:
