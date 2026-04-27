@@ -602,6 +602,53 @@ async def hourly_quest():
             embed = discord.Embed(title="⏰ فعالية الساعة", description=f"**{q}**", color=0xff0000)
             await channel.send(embed=embed)
             break
+import discord
+import os
+import random
+from discord.ext import commands, tasks
+
+intents = discord.Intents.all()
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+# قاعدة بيانات سكاي كوين
+user_data = {}
+
+def check_u(uid):
+    if uid not in user_data:
+        user_data[uid] = {'sky_coins': 1000, 'level': 1, 'xp': 10}
+
+@bot.event
+async def on_ready():
+    print(f"✅ {bot.user.name} IS ONLINE")
+    if not hourly_quest.is_running():
+        hourly_quest.start()
+
+# --- أمر سكاي كوين الرسمي ---
+@bot.command(name="coins")
+async def coins_command(ctx):
+    uid = str(ctx.author.id)
+    check_u(uid)
+    balance = user_data[uid]['sky_coins']
+    embed = discord.Embed(
+        title="🪙 Sky Bank",
+        description=f"أهلاً {ctx.author.mention}\n\nرصيدك الحالي هو:\n**{balance:,} Sky Coins**",
+        color=0x00ffff
+    )
+    embed.set_footer(text="نظام عملة سكاي الرسمي")
+    await ctx.send(embed=embed)
+
+# --- نظام فعاليات الساعة ---
+questions = ["من بطل ريزدنت ايفل 4؟", "تقنية غوجو المشهورة؟", "مدينة GTA V؟"]
+
+@tasks.loop(hours=1)
+async def hourly_quest():
+    for guild in bot.guilds:
+        channel = discord.utils.get(guild.text_channels, name="الشات-العام💬")
+        if channel:
+            q = random.choice(questions)
+            embed = discord.Embed(title="⏰ فعالية الساعة", description=f"**{q}**", color=0xff0000)
+            await channel.send(embed=embed)
+            break
 
 token = os.getenv("TOKEN")
 bot.run(token)
