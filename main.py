@@ -361,43 +361,24 @@ questions_list = [
     "كم عدد سجدات التلاوة في القرآن الكريم؟",
     "في أي عام انتهت الحرب العالمية الثانية؟",
     # ... أضف بقية الـ 100 سؤال هنا بنفس التنسيق
-]
-
-# قائمة مؤقتة عشان ما تتكرر الأسئلة
-asked_questions = []
-
-@tasks.loop(seconds=10) # الوقت: كل ساعة
+@tasks.loop(hours=1)
 async def auto_question_task():
-    global asked_questions
-    
-    # آيدي القناة اللي ينزل فيها السؤال (غيره للآيدي حق قناتك)
-    channel_id = 123456789012345678 
-    channel = bot.get_channel(channel_id)
-    
-    if channel:
-        # إذا خلصت كل الأسئلة، نصفر القائمة عشان نعيد من جديد
-        if len(asked_questions) == len(questions_list):
-            asked_questions = []
-            
-        # نختار سؤال ما قد طلع قبل
-        available_questions = [q for q in questions_list if q not in asked_questions]
-        question = random.choice(available_questions)
-        asked_questions.append(question)
+    # البوت بيبحث عن الروم بكل السيرفرات اللي هو فيها
+    for guild in bot.guilds:
+        channel = discord.utils.get(guild.channels, name="الشات-العام💬")
         
-        embed = discord.Embed(
-            title="❓ سؤال الساعة!",
-            description=f"**{question}**\n\nأول واحد يجاوب صح له **2000 كوينز**! 💰",
-            color=discord.Color.gold()
-        )
-        await channel.send(embed=embed)
-
-# تشغيل العداد أول ما يشتغل البوت
-@bot.event
-async def on_ready():
-    if not auto_question_task.is_running():
-        auto_question_task.start()
-    print(f"✅ تم تشغيل البوت: {bot.user.name}")
-    print("⏰ نظام الأسئلة التلقائية بدأ العمل!")
+        if channel:
+            # اختيار سؤال عشوائي
+            question = random.choice(questions_list)
+            
+            embed = discord.Embed(
+                title="❓ سؤال الساعة!",
+                description=f"**{question}**\n\nأول واحد يجاوب صح له **2000 كوينز**! 💰",
+                color=discord.Color.gold()
+            )
+            await channel.send(embed=embed)
+            print(f"✅ تم إرسال السؤال في روم: {channel.name}")
+            break # عشان يرسل في روم واحدة بس وما يكرر
 
 # تشغيل البوت بسحب التوكن من GitHub
 token = os.getenv("TOKEN")
