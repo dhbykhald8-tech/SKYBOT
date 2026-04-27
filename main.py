@@ -247,15 +247,7 @@ async def secret_code(ctx, code: str):
 
 @bot.command()
 async def mycoins(ctx):
-    data = load_data()
-    u_id = str(ctx.author.id)
-    
-    if u_id in data["users"]:
-        balance = data["users"][u_id]["balance"]
-        await ctx.send(f"💳 رصيدك الحالي هو: **{balance:,}** سكاي كوينز.")
-    else:
-        await ctx.send("❌ ليس لديك حساب بنكي حالياً، تفاعل في الشات لفتح حساب!")
-# --- ابدأ اللصق من هنا (مكان اللي مسحته) ---
+# --- بداية اللصق من سطر 250 ---
 
 @bot.command(name="mycoins")
 async def mycoins(ctx):
@@ -273,12 +265,11 @@ class MarryView(discord.ui.View):
     @discord.ui.button(label="قبول ✅", style=discord.ButtonStyle.green)
     async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.target.id:
-            return await interaction.response.send_message("❌ هذا الطلب مو لك!", ephemeral=True)
+            return await interaction.response.send_message("❌ الطلب مو لك!", ephemeral=True)
         
         data = load_data()
         u_id, t_id = str(self.author.id), str(self.target.id)
         
-        # تنفيذ الزواج في الداتا
         if u_id not in data["users"]: data["users"][u_id] = {"balance": 0, "married_to": None}
         if t_id not in data["users"]: data["users"][t_id] = {"balance": 0, "married_to": None}
         
@@ -286,25 +277,24 @@ class MarryView(discord.ui.View):
         data["users"][t_id]["married_to"] = u_id
         data["users"][u_id]["balance"] -= 20000 
         save_data(data)
-        
-        await interaction.response.edit_message(content=f"💖 مبروك! تم الزواج بين {self.author.mention} و {self.target.mention}! 💍", view=None)
+        await interaction.response.edit_message(content=f"💖 مبروك! {self.author.mention} و {self.target.mention} تزوجوا! 💍", view=None)
 
     @discord.ui.button(label="رفض ❌", style=discord.ButtonStyle.red)
     async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.target.id:
-            return await interaction.response.send_message("❌ مو أنت المقصود!", ephemeral=True)
-        await interaction.response.edit_message(content=f"💔 {self.target.mention} رفض طلب الزواج..", view=None)
+            return await interaction.response.send_message("❌ مو لك!", ephemeral=True)
+        await interaction.response.edit_message(content=f"💔 تم رفض طلب الزواج..", view=None)
 
 @bot.command(name="marry")
 async def marry(ctx, member: discord.Member):
-    if member == ctx.author: return await ctx.reply("ما يصير تتزوج نفسك 😂")
+    if member == ctx.author: return await ctx.reply("اذكر الله، ما يصير تتزوج نفسك 😂")
     
     data = load_data()
     u_id = str(ctx.author.id)
     balance = data.get("users", {}).get(u_id, {}).get("balance", 0)
 
     if balance < 20000:
-        await ctx.reply(f"❌ المهر 20,000 وأنت رصيدك {balance:,}")
+        await ctx.reply(f"❌ لازم مهر 20,000! رصيدك: {balance:,}")
         return
 
     view = MarryView(ctx.author, member)
@@ -319,13 +309,13 @@ async def divorce(ctx):
         data["users"][u_id]["married_to"] = None
         if t_id in data["users"]: data["users"][t_id]["married_to"] = None
         save_data(data)
-        await ctx.reply("💔 تم الانفصال.. صرت عزوبي!")
+        await ctx.reply("💔 تم الانفصال بنجاح!")
     else:
-        await ctx.reply("أنت مو متزوج أصلاً!")
+        await ctx.reply("أنت عزوبي أصلاً!")
 
 @bot.event
 async def on_ready():
-    print(f"✅ {bot.user} متصل وجاهز!")
+    print(f"✅ {bot.user} متصل وشغال!")
 
 token = os.getenv("TOKEN")
 if token:
