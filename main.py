@@ -318,6 +318,43 @@ questions_list = [
     "ما هو بطل Resident Evil 4؟"
 ]
 asked_questions = []
+# --- نظام التحقق من الإجابة وتوزيع الجوائز ---
+
+# أولاً: هذي قائمة الأجوبة الصحيحة (تأكد إنها بنفس ترتيب الأسئلة)
+answers_dict = {
+    "ما هي عاصمة الكويت؟": "الكويت",
+    "من هو بطل أنمي ون بيس؟": "لوفي",
+    "كم عدد قارات العالم؟": "7",
+    "ما هو أسرع حيوان بري؟": "الفهد",
+    "من هو مؤلف جوجوتسو كايسن؟": "أكوتامي",
+    "ما هو بطل Resident Evil 4؟": "ليون"
+}
+
+@bot.event
+async def on_message(message):
+    # إذا كانت الرسالة من البوت نفسه، تجاهلها
+    if message.author == bot.user:
+        return
+
+    # التحقق إذا كانت الإجابة صحيحة لسؤال الساعة
+    for question, answer in answers_dict.items():
+        # إذا كانت الإجابة موجودة في رسالة الشخص وكان السؤال هو آخر واحد نزل
+        if answer.lower() in message.content.lower():
+            # هنا نضيف كود إعطاء الكوينز (تعديل حسب نظام الفلوس عندك)
+            data = load_data()
+            user_id = str(message.author.id)
+            
+            if user_id not in data:
+                data[user_id] = {'balance': 0}
+            
+            data[user_id]['balance'] += 2000
+            save_data(data)
+            
+            await message.reply(f"✅ كفوو يا وحش! إجابة صحيحة، تم إضافة **2000 كوينز** لرصيدك! 💰")
+            break # عشان ما يعطيه مرتين
+
+    # ضروري جداً عشان أوامر البوت الثانية مثل !marry تظل شغالة
+    await bot.process_commands(message)
 
 # --- 2. نظام التوقيت ---
 @tasks.loop(hours=1)
