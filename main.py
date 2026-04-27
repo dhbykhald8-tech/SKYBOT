@@ -365,7 +365,7 @@ async def steal(ctx, member: discord.Member):
 
     # نسبة النجاح 20% والفشل 80%
     if random.randint(1, 100) <= 20:
-        stolen = random.randint(100, 500)
+        stolen = random.randint(20000, 50000)
         data["users"][u_id]["balance"] += stolen
         data["users"][t_id]["balance"] -= stolen
         save_data(data)
