@@ -349,6 +349,55 @@ async def this_or_that(ctx):
         color=discord.Color.orange()
     )
     await ctx.send(embed=embed)
+import asyncio
+import random
+from discord.ext import tasks
+
+# قائمة الـ 100 سؤال (تقدر تزيدها أو تغيرها)
+questions_list = [
+    "ما هو أطول نهر في العالم؟",
+    "من هو مؤلف مانجا ون بيس؟",
+    "ما هي عاصمة اليابان؟",
+    "كم عدد سجدات التلاوة في القرآن الكريم؟",
+    "في أي عام انتهت الحرب العالمية الثانية؟",
+    # ... أضف بقية الـ 100 سؤال هنا بنفس التنسيق
+]
+
+# قائمة مؤقتة عشان ما تتكرر الأسئلة
+asked_questions = []
+
+@tasks.loop(hours=1) # الوقت: كل ساعة
+async def auto_question_task():
+    global asked_questions
+    
+    # آيدي القناة اللي ينزل فيها السؤال (غيره للآيدي حق قناتك)
+    channel_id = 123456789012345678 
+    channel = bot.get_channel(channel_id)
+    
+    if channel:
+        # إذا خلصت كل الأسئلة، نصفر القائمة عشان نعيد من جديد
+        if len(asked_questions) == len(questions_list):
+            asked_questions = []
+            
+        # نختار سؤال ما قد طلع قبل
+        available_questions = [q for q in questions_list if q not in asked_questions]
+        question = random.choice(available_questions)
+        asked_questions.append(question)
+        
+        embed = discord.Embed(
+            title="❓ سؤال الساعة!",
+            description=f"**{question}**\n\nأول واحد يجاوب صح له **2000 كوينز**! 💰",
+            color=discord.Color.gold()
+        )
+        await channel.send(embed=embed)
+
+# تشغيل العداد أول ما يشتغل البوت
+@bot.event
+async def on_ready():
+    if not auto_question_task.is_running():
+        auto_question_task.start()
+    print(f"✅ تم تشغيل البوت: {bot.user.name}")
+    print("⏰ نظام الأسئلة التلقائية بدأ العمل!")
 
 # تشغيل البوت بسحب التوكن من GitHub
 token = os.getenv("TOKEN")
