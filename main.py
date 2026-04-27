@@ -308,6 +308,67 @@ async def divorce(ctx):
         await ctx.reply("💔 تم الانفصال بنجاح!")
     else:
         await ctx.reply("أنت عزوبي أصلاً!")
+# --- محرك الألعاب واللفلات (حطه في بداية الملف) ---
+game_config = {"current_q": None}
+questions = {
+    "من هو بطل Resident Evil 4؟": "ليون",
+    "ما اسم الشيطان داخل إيتادوري؟": "سوكونا",
+    "من هو الوميض الأصفر في ناروتو؟": "ميناتو"
+}
+
+def update_data_with_xp(u_id, xp_gain, coin_gain=0):
+    data = load_data()
+    uid = str(u_id)
+    if uid not in data["users"]:
+        data["users"][uid] = {"balance": 0, "married_to": None, "xp": 0, "level": 1}
+    
+    user = data["users"][uid]
+    user["xp"] = user.get("xp", 0) + xp_gain
+    user["balance"] = user.get("balance", 0) + coin_gain
+    
+    leveled_up = False
+    if user.get("xp", 0) >= 100:
+        user["xp"] -= 100
+        user["level"] = user.get("level", 1) + 1
+        leveled_up = True
+    
+    save_data(data)
+    return leveled_up, user["level"]
+
+@bot.event
+async def on_message(message):
+    if message.author == bot.user: return
+    
+    # زيادة XP مع كل رسالة عشان يرتفع اللفل
+    update_data_with_xp(message.author.id, 2)
+
+    # التحقق من إجابة اللعبة
+    global game_config
+    if game_config["current_q"] in questions:
+        if message.content.strip() == questions[game_config["current_q"]]:
+            is_up, lvl = update_data_with_xp(message.author.id, 30, 2000)
+            await message.reply(f"✅ صح! فزت بـ 2000 كوينز و 30 XP.")
+            if is_up: await message.send(f"🎊 مبروك! وصلت لفل **{lvl}**")
+            game_config["current_q"] = None
+            return
+
+    await bot.process_commands(message)
+
+@bot.command(name="سؤال")
+async def start_game(ctx):
+    game_config["current_q"] = random.choice(list(questions.keys()))
+    await ctx.send(f"❓ **سؤال اللعبة:**\n{game_config['current_q']}")
+
+@bot.command(name="profile")
+async def show_profile(ctx, member: discord.Member = None):
+    member = member or ctx.author
+    data = load_data()
+    user = data["users"].get(str(member.id), {"balance": 0, "level": 1, "xp": 0})
+    embed = discord.Embed(title=f"👤 ملف {member.display_name}", color=0x3498db)
+    embed.add_field(name="🆙 المستوى", value=user.get("level", 1), inline=True)
+    embed.add_field(name="✨ الـ XP", value=f"{user.get('xp', 0)}/100", inline=True)
+    embed.add_field(name="💰 الرصيد", value=f"{user.get('balance', 0):,}", inline=False)
+    await ctx.reply(embed=embed)
 
 @bot.event
 async def on_ready():
