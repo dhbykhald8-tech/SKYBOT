@@ -438,6 +438,12 @@ async def coins(ctx, member: discord.Member = None):
         color=0x00ff00
     )
     await ctx.send(embed=embed)
+@bot.command()
+async def coins(ctx):
+    uid = str(ctx.author.id)
+    check_u(uid)
+    balance = user_data[uid]['coins']
+    await ctx.send(f"💰 رصيدك الحالي: **{balance:,}**")
 
 token = os.getenv("TOKEN")
 bot.run(token)
