@@ -667,30 +667,6 @@ async def fish_error(ctx, error):
     if isinstance(error, commands.CommandOnCooldown):
         seconds = round(error.retry_after, 1)
         await ctx.reply(f"⌛ اهدأ شوي، السمك انحاش! انتظر `{seconds}` ثواني.", delete_after=5)
-# --- المتغيرات الأساسية (خلها على الحافة يسار) ---
-bot.current_king = None
-bot.king_started = False
-@bot.command(name="شغل_الملك")
-async def start_king_game(ctx):
-@bot.command(name="شغل_الملك")
-async def start_king_game(ctx):
-    # يشيك لو عندك رتبة اسمها admin (صغيرة أو كبيرة ما يهم)
-    is_admin = any(role.name.lower() == "admin" for role in ctx.author.roles)
-    is_owner = ctx.author.id == ctx.guild.owner_id
-
-    if is_admin or is_owner:
-        bot.king_started = True
-        await ctx.send("👑 **تم تفعيل الكرسي الملكي!** التنافس بدأ الآن بـ `!takeover`")
-    else:
-        await ctx.send("❌ لازم يكون عندك رتبة **admin** عشان تشغل اللعبة!")
-
-@bot.command(name="اغلق_الملك")
-async def stop_king_game(ctx):
-    is_admin = any(role.name.lower() == "admin" for role in ctx.author.roles)
-    if is_admin or ctx.author.id == ctx.guild.owner_id:
-        bot.king_started = False
-        bot.current_king = None
-        await ctx.send("🔒 تم إغلاق الكرسي الملكي.")
 
 # هذا الجزء لازم يكون بآخر الملف وبدون أي فراغات قبله
 token = os.getenv("TOKEN")
