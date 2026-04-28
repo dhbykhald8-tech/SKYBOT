@@ -530,28 +530,7 @@ async def rescue(ctx, member: discord.Member):
         # إذا فشل، الفزاع ينكتم هو بعد!
         await ctx.author.timeout(timedelta(minutes=5), reason="فشل في تهريب سجين")
         await ctx.send(f"❌ انقفطتوا! {ctx.author.mention} حاول يهرب خويه وانكتم معه 5 دقائق! 👮‍♂️")
-# ضيف هذا داخل on_message فوق bot.process_commands
-    if random.randint(1, 100) == 1: # نسبة 1% مع كل رسالة يرمي كوينز
-        drop_amount = random.randint(500, 1500)
-        await message.channel.send(f"🧧 **هدية سريعة!** أول واحد يكتب `انا` بياخذ **{drop_amount}** كوينز!")
-
-        def check(m):
-            return m.content == 'انا' and m.channel == message.channel
-
-        try:
-            msg = await bot.wait_for('message', check=check, timeout=30.0)
-            u_id = str(msg.author.id)
-            # إضافة الكوينز للفائز
-            data = load_data()
-            if u_id not in data["users"]: data["users"][u_id] = {"balance": 0}
-            data["users"][u_id]["balance"] += drop_amount
-            save_data(data)
-            await message.channel.send(f"✅ كفو {msg.author.mention}! أنت أسرع واحد وأخذت الهدية.")
-        except asyncio.TimeoutError:
-            await message.channel.send("⏱️ محد كتب شي؟ راحت عليكم الهدية!")
-@bot.command(name="invest")
-async def invest(ctx, amount: int):
- كوينز.")
+#
 
 @bot.command(name="kidnap")
 @commands.has_permissions(administrator=True) # للمسؤولين فقط عشان ما يصير إزعاج
