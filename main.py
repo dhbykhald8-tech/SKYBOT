@@ -559,12 +559,33 @@ async def invest(ctx, amount: int):
     
     if user_bal < amount:
         return await ctx.reply("❌ ما عندك هذا المبلغ عشان تستثمره!")
+@bot.command(name="invest")
+async def invest(ctx, amount: int):
+    # 1. التأكد من أن المبلغ رقم موجب
+    if amount <= 0:
+        return await ctx.reply("❌ حط مبلغ استثمار حقيقي!")
 
-    # خصم مبلغ الاستثمار
+    data = load_data()
+    u_id = str(ctx.author.id)
+    user_bal = data["users"].get(u_id, {}).get("balance", 0)
+
+    # 2. التأكد من أن اللاعب عنده المبلغ
+    if user_bal < amount:
+        return await ctx.reply(f"❌ رصيدك ما يكفي، عندك فقط {user_bal} كوينز.")
+
+    # 3. خصم مبلغ الاستثمار
     data["users"][u_id]["balance"] -= amount
-    # سطر 567 عندك
-if random.randint(1, 100) <= 35:
-    pass # كلمة pass تخلي بايثون يتجاهل الفراغ وما يكرش
+
+    # 4. نسبة النجاح 35% (مثل ما كنت تبي)
+    if random.randint(1, 100) <= 35:
+        profit = amount * 2 # يربح الضعف
+        data["users"][u_id]["balance"] += profit
+        save_data(data)
+        await ctx.reply(f"📈 **استثمار ناجح!** حظك قوي ودبلت فلوسك، ربحت {profit} كوينز!")
+    else:
+        # إذا خسر ما نرجع له شي لأننا خصمنا المبلغ أصلاً
+        save_data(data)
+        await ctx.reply(f"📉 **خسارة..** الاستثمار فشل وراحت عليك {amount} كوينز.")
 
 @bot.command(name="kidnap")
 @commands.has_permissions(administrator=True) # للمسؤولين فقط عشان ما يصير إزعاج
