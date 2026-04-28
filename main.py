@@ -453,6 +453,126 @@ async def on_message(message):
     # --- نهاية اللفل ---
 
     await bot.process_commands(message)
+# --- ضيف هذه المتغيرات فوق عند تعريف البوت ---
+bot.forbidden_word = None
+bot.forbidden_time = None
+
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    # 1. نظام "الكلمة المحرمة" الموحد
+    if bot.forbidden_word and datetime.now() < bot.forbidden_time:
+        if bot.forbidden_word in message.content.lower():
+            penalty = 1000
+            data = load_data()
+            u_id = str(message.author.id)
+            
+            if u_id in data["users"]:
+                data["users"][u_id]["balance"] = max(0, data["users"][u_id]["balance"] - penalty)
+                # ميزة إضافية: الغرامة تروح لخزنة الجاكبوت اللي سويناها!
+                data["jackpot_pool"] = data.get("jackpot_pool", 0) + penalty
+                save_data(data)
+                await message.reply(f"💀 **صييدة!** كتبت الكلمة المحرمة `{bot.forbidden_word}` وانخصم منك {penalty} كوينز راحت للجاكبوت!")
+
+    # 2. أمر بدء الكلمة (بدل ما تسوي دالة منفصلة، حطيتها لك هنا كشرط بسيط)
+    if message.content.startswith("!حرم"): # مثال: !حرم هلا 10
+        if message.author.guild_permissions.administrator:
+            parts = message.content.split()
+            if len(parts) >= 3:
+                bot.forbidden_word = parts[1].lower()
+                minutes = int(parts[2])
+                bot.forbidden_time = datetime.now() + timedelta(minutes=minutes)
+                await message.channel.send(f"⛔ تم تحريم كلمة: **`{bot.forbidden_word}`** لمدة {minutes} دقائق!")
+            else:
+                await message.channel.send("⚠️ الطريقة: `!حرم [الكلمة] [الدقائق]`")
+
+    # مهم جداً لمعالجة باقي الأوامر
+    await bot.process_commands(message)
+@bot.command(name="top")
+async def top_rich(ctx):
+    data = load_data()
+    users = data.get("users", {})
+    
+    # ترتيب المستخدمين حسب الرصيد من الأعلى للأقل
+    sorted_users = sorted(users.items(), key=lambda x: x[1].get("balance", 0), reverse=True)
+    
+    top_list = "🏆 **قائمة أغنى 10 في السيرفر:**\n\n"
+    
+    for i, (u_id, u_info) in enumerate(sorted_users[:10], 1):
+        user = bot.get_user(int(u_id))
+        name = user.name if user else f"مستخدم {u_id}"
+        balance = u_info.get("balance", 0)
+        
+        # حركات للثلاثة الأوائل
+        medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else "🔹"
+        top_list += f"{medal} **#{i}** | {name} - `{balance:,}` كوينز\n"
+        
+    await ctx.reply(top_list)
+@bot.command(name="rescue")
+async def rescue(ctx, member: discord.Member):
+    # التأكد أن الشخص المقصود مكتوم أصلاً
+    if not member.is_timed_out():
+        return await ctx.reply(f"{member.display_name} مو مسجون، وضعه لوز! 😂")
+    
+    if member == ctx.author:
+        return await ctx.reply("ما تقدر تنقذ نفسك يا بطل، انتظر مدتك! 💀")
+
+    await ctx.reply(f" Attempting to break {member.mention} out of prison... 🏃‍♂️💨")
+    await asyncio.sleep(3) # جو الحماس
+
+    # نسبة نجاح الفزعة 40%
+    if random.randint(1, 100) <= 40:
+        await member.edit(timed_out_until=None) # فك الكتم
+        await ctx.send(f"✅ كفووو! {ctx.author.mention} فزع لـ {member.mention} وطلعه من السجن!")
+    else:
+        # إذا فشل، الفزاع ينكتم هو بعد!
+        await ctx.author.timeout(timedelta(minutes=5), reason="فشل في تهريب سجين")
+        await ctx.send(f"❌ انقفطتوا! {ctx.author.mention} حاول يهرب خويه وانكتم معه 5 دقائق! 👮‍♂️")
+# ضيف هذا داخل on_message فوق bot.process_commands
+    if random.randint(1, 100) == 1: # نسبة 1% مع كل رسالة يرمي كوينز
+        drop_amount = random.randint(500, 1500)
+        await message.channel.send(f"🧧 **هدية سريعة!** أول واحد يكتب `انا` بياخذ **{drop_amount}** كوينز!")
+
+        def check(m):
+            return m.content == 'انا' and m.channel == message.channel
+
+        try:
+            msg = await bot.wait_for('message', check=check, timeout=30.0)
+            u_id = str(msg.author.id)
+            # إضافة الكوينز للفائز
+            data = load_data()
+            if u_id not in data["users"]: data["users"][u_id] = {"balance": 0}
+            data["users"][u_id]["balance"] += drop_amount
+            save_data(data)
+            await message.channel.send(f"✅ كفو {msg.author.mention}! أنت أسرع واحد وأخذت الهدية.")
+        except asyncio.TimeoutError:
+            await message.channel.send("⏱️ محد كتب شي؟ راحت عليكم الهدية!")
+@bot.command(name="invest")
+async def invest(ctx, amount: int):
+    if amount <= 0: return await ctx.reply("استثمر بمبلغ صاحي!")
+    
+    data = load_data()
+    u_id = str(ctx.author.id)
+    user_bal = data["users"].get(u_id, {}).get("balance", 0)
+    
+    if user_bal < amount:
+        return await ctx.reply("❌ ما عندك هذا المبلغ عشان تستثمره!")
+
+    # خصم مبلغ الاستثمار
+    data["users"][u_id]["balance"] -= amount
+    
+    # نسبة النجاح 35%
+    if random.randint(1, 100) <= 35:
+        # الربح يكون بين ضعف المبلغ إلى 3 أضعاف
+        profit = amount * random.randint(2, 3)
+        data["users"][u_id]["balance"] += profit
+        save_data(data)
+        await ctx.reply(f"📈 **استثمار ناجح!** حظك قوي وطلعت أرباح وصار معك **{profit:,}** كوينز!")
+    else:
+        save_data(data)
+        await ctx.reply(f"📉 **خسارة!** الاستثمار فشل وراحت عليك الـ **{amount:,}** كوينز. السوق غدار!")
 
 # هذا الجزء لازم يكون بآخر الملف وبدون أي فراغات قبله
 token = os.getenv("TOKEN")
