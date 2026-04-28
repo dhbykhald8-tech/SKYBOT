@@ -671,23 +671,6 @@ async def fish_error(ctx, error):
 bot.current_king = None
 bot.king_started = False  # اللعبة تبدأ وهي طافية
 
-# 1. أمر تشغيل اللعبة (فقط للي معاه رتبة "اداري")
-@bot.command(name="شغل_الملك")
-async def start_king_game(ctx):
-    # التأكد أن الشخص عنده رتبة اسمها "اداري"
-    admin_role = discord.utils.get(ctx.author.roles, name="اداري")
-    
-    if admin_role:
-        bot.king_started = True
-        await ctx.send("👑 **تم تفعيل الكرسي الملكي!** الآن يمكن للجميع التنافس باستخدام `!takeover`")
-    else:
-        await ctx.send("❌ هذا الأمر خاص للي عندهم رتبة **اداري** فقط!")
-
-# 2. أمر المنافسة (متاح للكل بس لازم تكون اللعبة شغالة)
-@bot.command(name="takeover")
-async def takeover(ctx):
-    if not bot.king_started:
-        return await ctx.reply("🔒 اللعبة مقفلة حالياً، انطر واحد من الاداريين يشغلها.")
 
     cost = 1000
     data = load_data()
