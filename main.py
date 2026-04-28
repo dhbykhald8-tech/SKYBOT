@@ -565,56 +565,7 @@ async def invest(ctx, amount: int):
     
     # نسبة النجاح 35%
     if random.randint(1, 100) <= 35:
-        # الربح يكون بين ضعف المبلغ إلى 3 أضعاف
-        profit = amount * random.randint(2, 3)
-        data["users"][u_id]["balance"] += profit
-        save_data(data)
-        await ctx.reply(f"📈 **استثمار ناجح!** حظك قوي وطلعت أرباح وصار معك **{profit:,}** كوينز!")
-    else:
-        save_data(data)
-        await ctx.reply(f"📉 **خسارة!** الاستثمار فشل وراحت عليك الـ **{amount:,}** كوينز. السوق غدار!")
-@bot.command(name="fish")
-@commands.cooldown(1, 20, commands.BucketType.user) # وقت انتظار 20 ثانية بين كل صيدة
-async def fish(ctx):
-    data = load_data()
-    u_id = str(ctx.author.id)
-    
-    if u_id not in data["users"]: 
-        data["users"][u_id] = {"balance": 0}
-
-    await ctx.reply("🎣 قاعد تصيد... انتظر شوي...")
-    await asyncio.sleep(2) 
-
-    chance = random.randint(1, 100)
-    
-    # 1. السمكة الكبيرة (حوت) - نسبة 10%
-    if chance <= 10:
-        reward = 500
-        data["users"][u_id]["balance"] += reward
-        msg = f"🐋 **مبروك صدت السمكة الكبيرة!** وأخذت **{reward}** كوينز."
-    
-    # 2. سمك عادي - نسبة 40%
-    elif chance <= 50:
-        reward = 250
-        data["users"][u_id]["balance"] += reward
-        msg = f"🐟 **مبروك صدت سمك صغير** وأخذت **{reward}** كوينز."
-    
-    # 3. الجزمة - نسبة 50%
-    else:
-        penalty = 1000
-        data["users"][u_id]["balance"] = max(0, data["users"][u_id]["balance"] - penalty)
-        msg = f"🥾 **هاردلك صدت جزمة!** وانخصم منك **{penalty}** كوينز."
-
-    save_data(data)
-    await ctx.send(f"{ctx.author.mention} {msg}")
-
-# تنبيه وقت الانتظار
-@fish.error
-async def fish_error(ctx, error):
-    if isinstance(error, commands.CommandOnCooldown):
-        await ctx.reply(f"⌛ اهدأ شوي، الصنارة لسه بالبحر! انتظر `{error.retry_after:.1f}` ثانية.")
-import asyncio
-from datetime import timedelta
+     
 
 @bot.command(name="kidnap")
 @commands.has_permissions(administrator=True) # للمسؤولين فقط عشان ما يصير إزعاج
