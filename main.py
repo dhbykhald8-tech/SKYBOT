@@ -719,6 +719,16 @@ async def stop_king_game(ctx):
         bot.king_started = False
         bot.current_king = None
         await ctx.send("🔒 تم إغلاق الكرسي الملكي بنجاح.")
+@bot.command(name="شغل_الملك")
+async def start_king_game(ctx):
+    # يشيك لو عندك رتبة اسمها Admin أو لو أنت الـ Owner
+    has_role = discord.utils.get(ctx.author.roles, name="Admin")
+    
+    if has_role or ctx.author.id == ctx.guild.owner_id:
+        bot.king_started = True
+        await ctx.send("👑 **عاش الملك!** تم تفعيل الكرسي الملكي، التنافس بدأ الآن بـ `!takeover`")
+    else:
+        await ctx.send("❌ لازم يكون عندك رتبة **Admin** عشان تشغل اللعبة!")
 
 # هذا الجزء لازم يكون بآخر الملف وبدون أي فراغات قبله
 token = os.getenv("TOKEN")
