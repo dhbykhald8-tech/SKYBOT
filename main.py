@@ -613,6 +613,70 @@ async def fish(ctx):
 async def fish_error(ctx, error):
     if isinstance(error, commands.CommandOnCooldown):
         await ctx.reply(f"⌛ اهدأ شوي، الصنارة لسه بالبحر! انتظر `{error.retry_after:.1f}` ثانية.")
+import asyncio
+from datetime import timedelta
+
+@bot.command(name="kidnap")
+@commands.has_permissions(administrator=True) # للمسؤولين فقط عشان ما يصير إزعاج
+async def kidnap_event(ctx):
+    # اختيار عضو عشوائي من السيرفر (بشرط ما يكون بوت)
+    members = [m for m in ctx.guild.members if not m.bot and m.status != discord.Status.offline]
+    if not members: members = [m for m in ctx.guild.members if not m.bot] # إذا الكل أوفلاين يختار أي أحد
+    
+    victim = random.choice(members)
+    ransom_target = 10000  # مبلغ الفدية المطلوب
+    current_ransom = 0
+    donors = {} # عشان نعرف منو اللي فزع
+
+    await ctx.send(f"🚨 **خطفني جيت!** 🚨\nتم اختطاف {victim.mention} من قبل عصابة البوت! 🕵️‍♂️\nالمطلوب فدية إجمالية: **{ransom_target:,}** كوينز.\nمعكم **3 دقائق** لتجميع المبلغ ولا بياكل كتم **15 دقيقة**! \n\n*(للدفع اكتب: `!فدية [المبلغ]`)*")
+
+    def check(m):
+        return m.content.startswith("!فدية") and m.channel == ctx.channel and not m.author.bot
+
+    start_time = asyncio.get_event_loop().time()
+    
+    try:
+        while current_ransom < ransom_target:
+            elapsed = asyncio.get_event_loop().time() - start_time
+            if elapsed >= 180: break # انتهى الوقت (3 دقائق)
+            
+            try:
+                msg = await bot.wait_for('message', check=check, timeout=10.0)
+                parts = msg.content.split()
+                if len(parts) < 2: continue
+                
+                amount = int(parts[1])
+                u_id = str(msg.author.id)
+                data = load_data()
+                
+                # التأكد من رصيد الدافع
+                user_bal = data["users"].get(u_id, {}).get("balance", 0)
+                if user_bal < amount:
+                    await ctx.send(f"❌ {msg.author.mention} تبي تفزع وأنت طفران؟ ما عندك هالمبلغ!")
+                    continue
+                
+                # خصم المبلغ وإضافته للفدية
+                data["users"][u_id]["balance"] -= amount
+                current_ransom += amount
+                save_data(data)
+                
+                await ctx.send(f"💰 {msg.author.mention} دفع **{amount}** كوينز! \nالمجموع الحالي: `{current_ransom}/{ransom_target}`")
+                
+            except asyncio.TimeoutError:
+                continue
+
+        if current_ransom >= ransom_target:
+            await ctx.send(f"✅ **كفو والله يا فزاعة!** تم تجميع المبلغ وفك أسر {victim.mention}. الخاطفين انحاشوا! 🏃‍♂️💨")
+        else:
+            # تنفيذ الكتم لمدة 15 دقيقة (ربع ساعة)
+            try:
+                await victim.timeout(timedelta(minutes=15), reason="لم يتم دفع الفدية")
+                await ctx.send(f"💀 **انتهى الوقت!** محد فزع لـ {victim.mention} كفاية.. راح فيها كتم **15 دقيقة**! نراكم على خير.")
+            except:
+                await ctx.send(f"💀 انتهى الوقت! كنت بكتم {victim.mention} بس طلع عنده واسطة (رتبته عالية)!")
+
+    except Exception as e:
+        print(f"حدث خطأ في نظام الرهينة: {e}")
 
 # هذا الجزء لازم يكون بآخر الملف وبدون أي فراغات قبله
 token = os.getenv("TOKEN")
