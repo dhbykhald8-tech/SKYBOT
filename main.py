@@ -677,6 +677,98 @@ async def kidnap_event(ctx):
 
     except Exception as e:
         print(f"حدث خطأ في نظام الرهينة: {e}")
+@bot.command(name="fish")
+@commands.cooldown(1, 15, commands.BucketType.user)
+async def fish(ctx):
+    data = load_data()
+    u_id = str(ctx.author.id)
+    
+    if u_id not in data["users"]: 
+        data["users"][u_id] = {"balance": 0}
+
+    # 1. يرسل رسالة الانتظار أولاً
+    status_msg = await ctx.reply("🎣 رغيت الصنارة وقاعد تنطر السمكة...")
+    
+    # 2. ينتظر ثانيتين فعلياً (جو الحماس)
+    await asyncio.sleep(2) 
+
+    chance = random.randint(1, 100)
+    
+    if chance <= 10:
+        reward = 500
+        data["users"][u_id]["balance"] += reward
+        result_text = f"🐋 **مبروك صدت السمكة الكبيرة!** وأخذت **{reward}** كوينز."
+    elif chance <= 50:
+        reward = 250
+        data["users"][u_id]["balance"] += reward
+        result_text = f"🐟 **مبروك صدت سمك صغير** وأخذت **{reward}** كوينز."
+    else:
+        penalty = 1000
+        data["users"][u_id]["balance"] = max(0, data["users"][u_id]["balance"] - penalty)
+        result_text = f"🥾 **هاردلك صدت جزمة!** وانخصم منك **{penalty}** كوينز."
+
+    save_data(data)
+
+    # 3. التحديث التلقائي: يغير الرسالة القديمة بالنتيجة فوراً
+    await status_msg.edit(content=f"{ctx.author.mention} {result_text}\n💰 رصيدك الحالي: {data['users'][u_id]['balance']}")
+
+@fish.error
+async def fish_error(ctx, error):
+    if isinstance(error, commands.CommandOnCooldown):
+        seconds = round(error.retry_after, 1)
+        await ctx.reply(f"⌛ اهدأ شوي، السمك انحاش! انتظر `{seconds}` ثواني.", delete_after=5)
+# المتغيرات الأساسية
+bot.current_king = None
+bot.king_started = False  # اللعبة تبدأ وهي طافية
+
+# 1. أمر تشغيل اللعبة (فقط للي معاه رتبة "اداري")
+@bot.command(name="شغل_الملك")
+async def start_king_game(ctx):
+    # التأكد أن الشخص عنده رتبة اسمها "اداري"
+    admin_role = discord.utils.get(ctx.author.roles, name="اداري")
+    
+    if admin_role:
+        bot.king_started = True
+        await ctx.send("👑 **تم تفعيل الكرسي الملكي!** الآن يمكن للجميع التنافس باستخدام `!takeover`")
+    else:
+        await ctx.send("❌ هذا الأمر خاص للي عندهم رتبة **اداري** فقط!")
+
+# 2. أمر المنافسة (متاح للكل بس لازم تكون اللعبة شغالة)
+@bot.command(name="takeover")
+async def takeover(ctx):
+    if not bot.king_started:
+        return await ctx.reply("🔒 اللعبة مقفلة حالياً، انطر واحد من الاداريين يشغلها.")
+
+    cost = 1000
+    data = load_data()
+    u_id = str(ctx.author.id)
+    
+    user_bal = data["users"].get(u_id, {}).get("balance", 0)
+    if user_bal < cost:
+        return await ctx.reply(f"❌ لازم يكون عندك {cost} كوينز عشان تصير الملك!")
+
+    if bot.current_king == ctx.author:
+        return await ctx.reply("أنت الملك حالياً! 😂")
+
+    data["users"][u_id]["balance"] -= cost
+    save_data(data)
+    
+    old_king = bot.current_king
+    bot.current_king = ctx.author
+    
+    if old_king:
+        await ctx.send(f"⚔️ **انقلاب!** {ctx.author.mention} أطاح بـ {old_king.mention} وصار هو الملك! 👑")
+    else:
+        await ctx.send(f"👑 **عاش الملك!** {ctx.author.mention} استولى على الكرسي!")
+
+# 3. أمر إيقاف اللعبة (فقط للاداري)
+@bot.command(name="اغلق_الملك")
+async def stop_king_game(ctx):
+    admin_role = discord.utils.get(ctx.author.roles, name="اداري")
+    if admin_role:
+        bot.king_started = False
+        bot.current_king = None
+        await ctx.send("🔒 تم إغلاق الكرسي الملكي بنجاح.")
 
 # هذا الجزء لازم يكون بآخر الملف وبدون أي فراغات قبله
 token = os.getenv("TOKEN")
