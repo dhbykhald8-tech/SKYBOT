@@ -562,10 +562,9 @@ async def invest(ctx, amount: int):
 
     # خصم مبلغ الاستثمار
     data["users"][u_id]["balance"] -= amount
-    
-    # نسبة النجاح 35%
-    if random.randint(1, 100) <= 35:
-     
+    # سطر 567 عندك
+if random.randint(1, 100) <= 35:
+    pass # كلمة pass تخلي بايثون يتجاهل الفراغ وما يكرش
 
 @bot.command(name="kidnap")
 @commands.has_permissions(administrator=True) # للمسؤولين فقط عشان ما يصير إزعاج
