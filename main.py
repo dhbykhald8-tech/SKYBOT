@@ -667,15 +667,21 @@ async def fish_error(ctx, error):
     if isinstance(error, commands.CommandOnCooldown):
         seconds = round(error.retry_after, 1)
         await ctx.reply(f"⌛ اهدأ شوي، السمك انحاش! انتظر `{seconds}` ثواني.", delete_after=5)
-# المتغيرات الأساسية
+# --- المتغيرات الأساسية (خلها على الحافة يسار) ---
 bot.current_king = None
-bot.king_started = False  # اللعبة تبدأ وهي طافية
+bot.king_started = False
 
+# --- أمر الكرسي الملكي ---
+@bot.command(name="takeover")
+async def takeover(ctx):
+    if not bot.king_started:
+        return await ctx.reply("🔒 اللعبة مقفلة حالياً، انطر الاداري يشغلها.")
 
     cost = 1000
     data = load_data()
     u_id = str(ctx.author.id)
     
+    # فحص الرصيد
     user_bal = data["users"].get(u_id, {}).get("balance", 0)
     if user_bal < cost:
         return await ctx.reply(f"❌ لازم يكون عندك {cost} كوينز عشان تصير الملك!")
@@ -683,6 +689,7 @@ bot.king_started = False  # اللعبة تبدأ وهي طافية
     if bot.current_king == ctx.author:
         return await ctx.reply("أنت الملك حالياً! 😂")
 
+    # تنفيذ الانقلاب
     data["users"][u_id]["balance"] -= cost
     save_data(data)
     
@@ -690,7 +697,7 @@ bot.king_started = False  # اللعبة تبدأ وهي طافية
     bot.current_king = ctx.author
     
     if old_king:
-        await ctx.send(f"⚔️ **انقلاب!** {ctx.author.mention} أطاح بـ {old_king.mention} وصار هو الملك! 👑")
+        await ctx.send(f"⚔️ **انقلاب!** {ctx.author.mention} دفع {cost} وأطاح بـ {old_king.mention} وأخذ التاج! 👑")
     else:
         await ctx.send(f"👑 **عاش الملك!** {ctx.author.mention} استولى على الكرسي!")
 
