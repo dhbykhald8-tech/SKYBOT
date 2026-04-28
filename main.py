@@ -672,22 +672,25 @@ bot.current_king = None
 bot.king_started = False
 @bot.command(name="شغل_الملك")
 async def start_king_game(ctx):
-    # يشيك لو الرتبة اسمها Admin (بالضبط) أو لو أنت صاحب السيرفر
-    has_role = discord.utils.get(ctx.author.roles, name="Admin")
-    
-    if has_role or ctx.author.id == ctx.guild.owner_id:
+@bot.command(name="شغل_الملك")
+async def start_king_game(ctx):
+    # يشيك لو عندك رتبة اسمها admin (صغيرة أو كبيرة ما يهم)
+    is_admin = any(role.name.lower() == "admin" for role in ctx.author.roles)
+    is_owner = ctx.author.id == ctx.guild.owner_id
+
+    if is_admin or is_owner:
         bot.king_started = True
-        await ctx.send("👑 **تم تفعيل الكرسي الملكي!** التنافس بدأ الآن، اكتبوا `!takeover` واستولوا على التاج!")
+        await ctx.send("👑 **تم تفعيل الكرسي الملكي!** التنافس بدأ الآن بـ `!takeover`")
     else:
-        await ctx.send("❌ عذبي، البوت مو راضي يشوف رتبة Admin عندك، تأكد من السبلنق (A كبيرة) أو جرب وأنت صاحب السيرفر.")
+        await ctx.send("❌ لازم يكون عندك رتبة **admin** عشان تشغل اللعبة!")
 
 @bot.command(name="اغلق_الملك")
 async def stop_king_game(ctx):
-    has_role = discord.utils.get(ctx.author.roles, name="Admin")
-    if has_role or ctx.author.id == ctx.guild.owner_id:
+    is_admin = any(role.name.lower() == "admin" for role in ctx.author.roles)
+    if is_admin or ctx.author.id == ctx.guild.owner_id:
         bot.king_started = False
         bot.current_king = None
-        await ctx.send("🔒 تم إغلاق الكرسي الملكي بنجاح.")
+        await ctx.send("🔒 تم إغلاق الكرسي الملكي.")
 
 # هذا الجزء لازم يكون بآخر الملف وبدون أي فراغات قبله
 token = os.getenv("TOKEN")
